@@ -1,0 +1,14 @@
+# Installatie guid:
+https://raspberrytips.nl/dht22-temperatuursensor-raspberry-pi/
+
+## Python
+Run `sudo apt-get install python-dev`,
+vervolgens `git clone https://github.com/adafruit/Adafruit_Python_DHT`
+en `cd Adafruit\_Python\_DHT && sudo python3 setup.py install` voor de
+installatie.
+
+Als laats voor het scriptje, run `wget https://raspberrytips.nl/files/dht22temp.py`.
+Wel moest de pin aangepast worden in de `read_retry` functie naar pin nummer 3.
+
+## Documentatie voor de DHT sensor:
+https://github.com/adafruit/Adafruit_Python_DHT/blob/master/Adafruit_DHT/common.py
