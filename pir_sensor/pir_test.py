@@ -1,24 +1,22 @@
-import board
-import digitalio
-    
-PIR_PIN = board.D2   # Pin number connected to PIR sensor output wire.
-    
-# Setup digital input for PIR sensor:
-pir = digitalio.DigitalInOut(PIR_PIN)
-pir.direction = digitalio.Direction.INPUT
+import RPi.GPIO as GPIO
+import time
 
-def main():
-    old_value = pir.value
-    while(True):
-        pir_value = pir.value
-        if pir_value:
-            if not old_value:
-                print('Motion detected!')
+pir_sensor = 11
+
+GPIO.setmode(GPIO.BOARD)
+
+GPIO.setup(pir_sensor, GPIO.IN)
+
+current_state = 0
+try:
+    while True:
+        time.sleep(0.1)
+        current_state = GPIO.input(pir_sensor)
+        if current_state == 1:
+            print("Motion detected!")
         else:
-            if old_value:
-                print('Motion ended!')
-        old_value = pir_value
-
-
-if __name__ == "__main__":
-    main()
+            print("No motion detected :(")
+except KeyboardInterrupt:
+    pass
+finally:
+    GPIO.cleanup()
