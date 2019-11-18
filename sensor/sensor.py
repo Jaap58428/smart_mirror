@@ -7,6 +7,35 @@ else:
     import Adafruit_DHT
     import RPi.GPIO as GPIO
 
+class SensorBoard():
+    def __init__(self):
+        pass
+
+    def sensor(self, sensor, *args):
+        return sensor(*args)
+
+
+class Board(SensorBoard):
+    def __init__(self):
+        pass
+
+    def __enter__(self):
+        GPIO.setmode(GPIO.BOARD)
+        return self    
+    
+    def __exit__(self, *args): 
+        GPIO.cleanup()
+
+class BoardMock(SensorBoard):
+    def __init__(self):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass
+
 class Sensor(ABC):
     @abstractclassmethod
     def sense(self):
@@ -32,12 +61,11 @@ class MotionSense(Sensor):
         self.pin = pin
     
     def __enter__(self):
-        GPIO.setmode(GPIO.BOARD)
         GPIO.setup(self.pin, GPIO.IN)
         return self
     
     def __exit__(self, *args):
-        GPIO.cleanup()
+        pass
 
     def sense(self):
         current_state = GPIO.input(self.pin)
