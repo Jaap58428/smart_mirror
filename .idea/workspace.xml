@@ -13,6 +13,7 @@
   </component>
   <component name="ProjectId" id="1TndRgfFulT3slk8p1FaW4VMVbi" />
   <component name="PropertiesComponent">
+    <property name="restartRequiresConfirmation" value="false" />
     <property name="settings.editor.selected.configurable" value="preferences.editor" />
   </component>
   <component name="RunDashboard">
