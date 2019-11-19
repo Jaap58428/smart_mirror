@@ -11,6 +11,9 @@ class Color(Enum):
     DATA_PANEL = "#0F0"
 
 
+
+
+
 def get_main_window():
     window = tk.Tk()
     window.title("Smart Mirror GUI")
@@ -19,18 +22,37 @@ def get_main_window():
     )
     window.geometry('600x1000')
 
-    # TODO: fill full screen
-    window.minsize(150, 100)
     window.wm_state("zoomed")
 
-    # window.bind("<F11>", window.fullscreen_toggle)
-    # window.bind("<Escape>", window.fullscreen_cancel)
+    # def fullscreen_toggle(top_window, event="none"):
+    #     top_window.focus_set()
+    #     top_window.overrideredirect(True)
     #
-    # self.parent.focus_set()
-    # self.parent.overrideredirect(True)
+    #     top_window.attributes("-fullscreen", True)
+    #     top_window.wm_attributes("-topmost", 1)
     #
-    # self.parent.attributes("-fullscreen", True)
-    # self.parent.wm_attributes("-topmost", 1)
+    # def fullscreen_cancel(top_window, event="none"):
+    #     top_window.overrideredirect(False)
+    #     top_window.attributes("-fullscreen", False)
+    #     top_window.wm_attributes("-topmost", 0)
+    #
+    #     top_window.centerWindow()
+
+
+    # TODO: fill full screen
+    # window.bind("<F11>", fullscreen_toggle)
+    # window.bind("<Escape>", fullscreen_cancel)
+    #
+    # window.fullscreen_toggle()
+
+    window.minsize(150, 100)
+    # window.wm_state("zoomed")
+
+    window.focus_set()
+    # window.overrideredirect(True)
+
+    window.attributes("-fullscreen", True)
+    window.wm_attributes("-topmost", 1)
 
     return window
 
@@ -58,7 +80,7 @@ def generate_data_labels(parent, data_set):
             bg=Color.BACKGROUND.value,
             fg=Color.FONT_COLOR.value,
             anchor=tk.E,
-            font=("default", 120)
+            font=("default", 40)
         )
         new_label.pack()
     return parent, string_pointers
@@ -104,5 +126,5 @@ if __name__ == '__main__':
         window.update_idletasks()
         window.update()
 
-        # sleep(0.1)
+        sleep(0.1)
         sleep(0.033)  # equals to around 30fps
