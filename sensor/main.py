@@ -10,7 +10,6 @@ else:
     from sensor import MotionSense
 
 if __name__ == '__main__':
-    with Board() as b:
-        with MotionSense(7) as m, TempSense(17) as t:
-            print(m.sense())
-            print(t.sense())
+    with Board() as b, MotionSense(7) as m, TempSense(17) as t:
+        print(m.sense())
+        print(t.sense())
