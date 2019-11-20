@@ -3,6 +3,9 @@ from time import sleep
 import random
 from enum import Enum
 
+import sys
+#sys.path.append('/home/pi/smart_mirror/screen/sensor')
+from sensor import Board, TempSense, MotionSense 
 
 class Color(Enum):
     BACKGROUND = "#000"
@@ -22,7 +25,7 @@ def get_main_window():
     )
     window.geometry('600x1000')
 
-    window.wm_state("zoomed")
+#    window.wm_state("zoomed")
 
     # def fullscreen_toggle(top_window, event="none"):
     #     top_window.focus_set()
@@ -48,11 +51,11 @@ def get_main_window():
     window.minsize(150, 100)
     # window.wm_state("zoomed")
 
-    window.focus_set()
+    #window.focus_set()
     # window.overrideredirect(True)
 
-    window.attributes("-fullscreen", True)
-    window.wm_attributes("-topmost", 1)
+    #window.attributes("-fullscreen", True)
+    #window.wm_attributes("-topmost", 1)
 
     return window
 
@@ -105,26 +108,34 @@ def get_mock_data():
     }
 
 
+def get_data(tmpsensor, motionsensor):
+    (hum, temp) = tmpsensor.sense()
+    hum = round(hum, 2)
+    temp = round(temp, 2)
+    motion = motionsensor.sense()
+    return {"temp": temp, "hum": hum, "motion": motion }
+
 def update_string_pointers(string_pointers, data_set):
     for attr, pointer in string_pointers.items():
         pointer.set('{0}: {1}'.format(attr, data_set[attr]))
 
 
 if __name__ == '__main__':
-    data_set = get_mock_data()
-
-    window = get_main_window()
-
-    heat_image_panel = get_heat_image_panel(window)
-    data_panel, string_pointers = get_data_panel(window, data_set)
-
-    while(True):
+    with Board() as board, MotionSense(7) as motion, TempSense(17) as temp:
         data_set = get_mock_data()
 
-        update_string_pointers(string_pointers, data_set)
+        window = get_main_window()
 
-        window.update_idletasks()
-        window.update()
+        heat_image_panel = get_heat_image_panel(window)
+        data_panel, string_pointers = get_data_panel(window, data_set)
 
-        sleep(0.1)
-        sleep(0.033)  # equals to around 30fps
+        while(True):
+            data_set = get_mock_data()
+
+            update_string_pointers(string_pointers, data_set)
+
+            window.update_idletasks()
+            window.update()
+
+           # sleep(0.1)
+           # sleep(0.033)  # equals to around 30fps
