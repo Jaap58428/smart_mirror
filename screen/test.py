@@ -1,5 +1,6 @@
 import tkinter as tk
 from time import sleep
+from time import time
 import random
 from enum import Enum
 
@@ -23,7 +24,7 @@ def get_main_window():
     )
 
     window.focus_set()
-    # window.attributes("-fullscreen", True)
+    window.attributes("-fullscreen", True)
     window.minsize(150, 100)
 
     return window
@@ -87,12 +88,38 @@ def get_data(tmpsensor, motionsensor):
     motion = motionsensor.sense()
     return {"temp": temp, "hum": hum, "motion": motion }
 
+
 def update_string_pointers(string_pointers, data_set):
     for attr, pointer in string_pointers.items():
         pointer.set('{0}: {1}'.format(attr, data_set[attr]))
 
 
+def kill_gui(gui_elements):
+    for element in gui_elements:
+        # check wether place or pack?
+        pack_remove ()
+
+
+def show_gui(gui_elements):
+    pass
+
+
+def stream_video():
+    pass
+
+
+def movement():
+    pass
+
+
 if __name__ == '__main__':
+
+    '''
+        check movement (once per second?)
+        stream video
+        get ambient temp (every 10 seconds?)
+    detect movement: reset timer
+    '''
     # with Board() as board, MotionSense(7) as motion, TempSense(17) as temp:
     data_set = get_mock_data()
 
@@ -101,10 +128,32 @@ if __name__ == '__main__':
     heat_image_panel = get_heat_image_panel(window)
     data_panel, string_pointers = get_data_panel(window, data_set)
 
-    while(True):
-        data_set = get_mock_data()
+    panels = [heat_image_panel, data_panel]
 
-        update_string_pointers(string_pointers, data_set)
+    is_gui_shown = True
+
+    # At boot set start time
+    start_time = time()
+    while(True):
+        # If timer hasn't passed into sleep: ACTIVE
+        if time() - start_time < 30:
+            stream_video()
+
+            # Update data panel
+            data_set = get_mock_data()
+            update_string_pointers(string_pointers, data_set)
+
+            if movement():
+                start_time = time()
+
+        # Else fall into PASSIVE, check for movement
+        else:
+            kill_gui(panels) if is_gui_shown else False
+
+            # Once movement is detected, show GUI and reset timer
+            if movement():
+                show_gui(panels)
+                start_time = time()
 
         window.update_idletasks()
         window.update()
