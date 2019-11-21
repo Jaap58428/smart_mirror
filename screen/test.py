@@ -3,9 +3,9 @@ from time import sleep
 import random
 from enum import Enum
 
-import sys
-#sys.path.append('/home/pi/smart_mirror/screen/sensor')
-from sensor import Board, TempSense, MotionSense 
+# import sys
+# #sys.path.append('/home/pi/smart_mirror/screen/sensor')
+# from sensor import Board, TempSense, MotionSense
 
 
 class Color(Enum):
@@ -23,7 +23,7 @@ def get_main_window():
     )
 
     window.focus_set()
-    window.attributes("-fullscreen", True)
+    # window.attributes("-fullscreen", True)
     window.minsize(150, 100)
 
     return window
@@ -51,7 +51,8 @@ def generate_data_labels(parent, data_set):
             textvariable=string_pointers[attr],
             bg=Color.BACKGROUND.value,
             fg=Color.FONT_COLOR.value,
-            anchor=tk.E,
+            width=10,
+            anchor=tk.W,
             font=("default", 40)
         )
         new_label.pack()
@@ -62,10 +63,12 @@ def get_data_panel(parent, data_set):
     data_panel = tk.Frame(parent)
     data_panel.configure(
         bg=Color.DATA_PANEL.value,
+        height=10,
     )
-    data_panel.place(relwidth=0.3, relheight=0.2, anchor=tk.NE)
 
-    updated_data_panel, string_pointers = generate_data_labels(parent, data_set)
+    updated_data_panel, string_pointers = generate_data_labels(data_panel, data_set)
+
+    updated_data_panel.pack(anchor=tk.NE)
 
     return updated_data_panel, string_pointers
 
@@ -90,21 +93,21 @@ def update_string_pointers(string_pointers, data_set):
 
 
 if __name__ == '__main__':
-    with Board() as board, MotionSense(7) as motion, TempSense(17) as temp:
+    # with Board() as board, MotionSense(7) as motion, TempSense(17) as temp:
+    data_set = get_mock_data()
+
+    window = get_main_window()
+
+    heat_image_panel = get_heat_image_panel(window)
+    data_panel, string_pointers = get_data_panel(window, data_set)
+
+    while(True):
         data_set = get_mock_data()
 
-        window = get_main_window()
+        update_string_pointers(string_pointers, data_set)
 
-        heat_image_panel = get_heat_image_panel(window)
-        data_panel, string_pointers = get_data_panel(window, data_set)
+        window.update_idletasks()
+        window.update()
 
-        while(True):
-            data_set = get_mock_data()
-
-            update_string_pointers(string_pointers, data_set)
-
-            window.update_idletasks()
-            window.update()
-
-            sleep(0.1)
-            sleep(0.033)  # equals to around 30fps
+        sleep(0.1)
+        sleep(0.033)  # equals to around 30fps
