@@ -7,14 +7,12 @@ import sys
 #sys.path.append('/home/pi/smart_mirror/screen/sensor')
 from sensor import Board, TempSense, MotionSense 
 
+
 class Color(Enum):
     BACKGROUND = "#000"
     FONT_COLOR = "#FFF"
     HEAT_PANEL = "#F00"
     DATA_PANEL = "#0F0"
-
-
-
 
 
 def get_main_window():
@@ -23,39 +21,10 @@ def get_main_window():
     window.configure(
         bg=Color.BACKGROUND.value
     )
-    window.geometry('600x1000')
 
-#    window.wm_state("zoomed")
-
-    # def fullscreen_toggle(top_window, event="none"):
-    #     top_window.focus_set()
-    #     top_window.overrideredirect(True)
-    #
-    #     top_window.attributes("-fullscreen", True)
-    #     top_window.wm_attributes("-topmost", 1)
-    #
-    # def fullscreen_cancel(top_window, event="none"):
-    #     top_window.overrideredirect(False)
-    #     top_window.attributes("-fullscreen", False)
-    #     top_window.wm_attributes("-topmost", 0)
-    #
-    #     top_window.centerWindow()
-
-
-    # TODO: fill full screen
-    # window.bind("<F11>", fullscreen_toggle)
-    # window.bind("<Escape>", fullscreen_cancel)
-    #
-    # window.fullscreen_toggle()
-
+    window.focus_set()
+    window.attributes("-fullscreen", True)
     window.minsize(150, 100)
-    # window.wm_state("zoomed")
-
-    #window.focus_set()
-    # window.overrideredirect(True)
-
-    #window.attributes("-fullscreen", True)
-    #window.wm_attributes("-topmost", 1)
 
     return window
 
@@ -137,5 +106,5 @@ if __name__ == '__main__':
             window.update_idletasks()
             window.update()
 
-           # sleep(0.1)
-           # sleep(0.033)  # equals to around 30fps
+            sleep(0.1)
+            sleep(0.033)  # equals to around 30fps
