@@ -136,6 +136,19 @@ def movement():
 
 def generate_debug_labels(parent):
     string_pointers = {}
+    if settings["display_sleep_timer"]:
+        string_pointers["display_sleep_timer"] = tk.StringVar()
+        string_pointers["display_sleep_timer"].set("Timer: 0")
+        timer_label = tk.Label(parent)
+        timer_label.configure(
+            textvariable=string_pointers["display_sleep_timer"],
+            bg=Color.BACKGROUND.value,
+            fg=Color.FONT_COLOR.value,
+            anchor=tk.W,
+            width=40,
+            font=("default", 10)
+        )
+        timer_label.pack()
     if settings["display_host_ip"]:
         ip = str(socket.gethostbyname(socket.gethostname()))
         string_pointers["display_host_ip"] = tk.StringVar()
@@ -146,21 +159,10 @@ def generate_debug_labels(parent):
             bg=Color.BACKGROUND.value,
             fg=Color.FONT_COLOR.value,
             anchor=tk.W,
+            width=40,
             font=("default", 10)
         )
         ip_label.pack()
-    if settings["display_sleep_timer"]:
-        string_pointers["display_sleep_timer"] = tk.StringVar()
-        string_pointers["display_sleep_timer"].set("Timer: 0")
-        timer_label = tk.Label(parent)
-        timer_label.configure(
-            textvariable=string_pointers["display_sleep_timer"],
-            bg=Color.BACKGROUND.value,
-            fg=Color.FONT_COLOR.value,
-            anchor=tk.W,
-            font=("default", 10)
-        )
-        timer_label.pack()
 
     return parent, string_pointers
 
