@@ -2,7 +2,17 @@ import tkinter as tk
 from time import sleep
 from time import time
 import random
+import socket
 from enum import Enum
+
+settings = {
+    "use_humidity_sensor": True,
+    "display_host_ip": True,
+    "display_sleep_timer": True,
+    "display_debug_panel": True,
+    "sleep_timeout_sec": 5,
+    "screen_max_frame_time_sec": 0.033  # equals to around 30fps
+}
 
 # import sys
 # #sys.path.append('/home/pi/smart_mirror/screen/sensor')
@@ -14,6 +24,7 @@ class Color(Enum):
     FONT_COLOR = "#FFF"
     HEAT_PANEL = "#F00"
     DATA_PANEL = "#0F0"
+    DEBUG_PANEL = "#00F"
 
 
 def get_main_window():
@@ -69,8 +80,7 @@ def get_data_panel(parent, data_set):
 
     updated_data_panel, string_pointers = generate_data_labels(data_panel, data_set)
 
-    updated_data_panel.pack(anchor=tk.NE)
-
+    updated_data_panel.pack(side=tk.TOP, anchor=tk.E)
     return updated_data_panel, string_pointers
 
 
@@ -95,40 +105,93 @@ def update_string_pointers(string_pointers, data_set):
 
 
 def kill_gui(gui_elements):
-    for element in gui_elements:
-        # check wether place or pack?
-        pack_remove ()
+    # heat image panel, requires place_remove()
+    gui_elements[0].place_forget()
+
+    # data & debug panel require pack_forget()
+    gui_elements[1].pack_forget()
+    if settings["display_debug_panel"]:
+        gui_elements[2].pack_forget()
 
 
 def show_gui(gui_elements):
-    pass
+    # heat image panel, requires place_remove()
+    gui_elements[0].place(relwidth=0.2, relheight=0.2, anchor=tk.NW)
+
+    # data & debug panel require pack_forget()
+    gui_elements[1].pack(side=tk.TOP, anchor=tk.E)
+    if settings["display_debug_panel"]:
+        gui_elements[2].pack(side=tk.BOTTOM, anchor=tk.W)
 
 
 def stream_video():
+    # TODO: Implement updating video screen panel
     pass
 
 
 def movement():
+    # TODO: Implement movement detection
     pass
 
 
-if __name__ == '__main__':
+def generate_debug_labels(parent):
+    string_pointers = {}
+    if settings["display_host_ip"]:
+        ip = str(socket.gethostbyname(socket.gethostname()))
+        string_pointers["display_host_ip"] = tk.StringVar()
+        string_pointers["display_host_ip"].set("Mirror network address: {0}".format(ip))
+        ip_label = tk.Label(parent)
+        ip_label.configure(
+            textvariable=string_pointers["display_host_ip"],
+            bg=Color.BACKGROUND.value,
+            fg=Color.FONT_COLOR.value,
+            anchor=tk.W,
+            font=("default", 10)
+        )
+        ip_label.pack()
+    if settings["display_sleep_timer"]:
+        string_pointers["display_sleep_timer"] = tk.StringVar()
+        string_pointers["display_sleep_timer"].set("Timer: 0")
+        timer_label = tk.Label(parent)
+        timer_label.configure(
+            textvariable=string_pointers["display_sleep_timer"],
+            bg=Color.BACKGROUND.value,
+            fg=Color.FONT_COLOR.value,
+            anchor=tk.W,
+            font=("default", 10)
+        )
+        timer_label.pack()
 
-    '''
-        check movement (once per second?)
-        stream video
-        get ambient temp (every 10 seconds?)
-    detect movement: reset timer
-    '''
+    return parent, string_pointers
+
+
+def get_debug_panel(parent):
+    debug_panel = tk.Frame(parent)
+    debug_panel.configure(
+        bg=Color.DEBUG_PANEL.value,
+    )
+    updated_debug_panel, string_pointers = generate_debug_labels(debug_panel)
+    updated_debug_panel.pack(side=tk.BOTTOM, anchor=tk.W)
+    return updated_debug_panel, string_pointers
+
+
+if __name__ == '__main__':
     # with Board() as board, MotionSense(7) as motion, TempSense(17) as temp:
     data_set = get_mock_data()
 
     window = get_main_window()
 
     heat_image_panel = get_heat_image_panel(window)
-    data_panel, string_pointers = get_data_panel(window, data_set)
+    data_panel, data_string_pointers = get_data_panel(window, data_set)
 
-    panels = [heat_image_panel, data_panel]
+    panels = [
+        heat_image_panel,
+        data_panel
+    ]
+
+    if settings["display_debug_panel"]:
+        debug_panel, debug_string_pointers = get_debug_panel(window)
+        panels.append(debug_panel)
 
     is_gui_shown = True
 
@@ -136,12 +199,18 @@ if __name__ == '__main__':
     start_time = time()
     while(True):
         # If timer hasn't passed into sleep: ACTIVE
-        if time() - start_time < 30:
+        time_passed = time() - start_time
+        if time_passed < settings["sleep_timeout_sec"]:
             stream_video()
 
             # Update data panel
             data_set = get_mock_data()
-            update_string_pointers(string_pointers, data_set)
+            update_string_pointers(data_string_pointers, data_set)
+
+            if settings["display_debug_panel"] and settings["display_sleep_timer"]:
+                time_str = round(time_passed, 1)
+                timer_str = "Timer: {0} ({1})".format(str(time_str), settings["sleep_timeout_sec"])
+                debug_string_pointers["display_sleep_timer"].set(timer_str)
 
             if movement():
                 start_time = time()
@@ -149,7 +218,6 @@ if __name__ == '__main__':
         # Else fall into PASSIVE, check for movement
         else:
             kill_gui(panels) if is_gui_shown else False
-
             # Once movement is detected, show GUI and reset timer
             if movement():
                 show_gui(panels)
@@ -158,5 +226,4 @@ if __name__ == '__main__':
         window.update_idletasks()
         window.update()
 
-        sleep(0.1)
-        sleep(0.033)  # equals to around 30fps
+        sleep(settings["screen_max_frame_time_sec"])
