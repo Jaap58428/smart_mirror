@@ -103,6 +103,6 @@ class MotionSenseMock(Sensor):
         pass
 
     def sense(self):
-        return 1
+        return random.randint(0, 1)
 
 

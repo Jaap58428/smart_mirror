@@ -136,9 +136,9 @@ def stream_video():
     pass
 
 
-def movement():
-    # TODO: Implement movement detection
-    pass
+def movement(motion_sensor):
+    motion = motion_sensor.sense()
+    return motion
 
 
 def generate_debug_labels(parent):
@@ -233,14 +233,14 @@ if __name__ == '__main__':
                     timer_str = "Timer: {0} ({1})".format(str(time_str), settings["sleep_timeout_sec"])
                     debug_string_pointers["display_sleep_timer"].set(timer_str)
 
-                if movement():
+                if movement(motion_sensor):
                     start_time = time()
 
             # Else fall into PASSIVE, check for movement
             else:
                 kill_gui(panels) if is_gui_shown else False
                 # Once movement is detected, show GUI and reset timer
-                if movement():
+                if movement(motion_sensor):
                     show_gui(panels)
                     start_time = time()
 
