@@ -92,7 +92,7 @@ def get_data_panel(parent, data_set):
 
 
 def get_ambient_temp_data(tmpsensor, last_req_time, last_data_set):
-    if time() - last_req_time > settings["ambient_temp_delay_sec"] or last_data_set is 0:
+    if time() - last_req_time > settings["ambient_temp_delay_sec"]:
         (hum, temp) = tmpsensor.sense()
         hum = round(hum, 2)
         temp = round(temp, 2)
