@@ -97,13 +97,10 @@ def get_ambient_temp_data(tmpsensor, last_req_time, last_data_set):
         hum = round(hum, 2)
         temp = round(temp, 2)
 
-        new_data_set = {"temp": temp, "hum": hum}
-        new_request_time = time()
-    else:
-        new_data_set = last_data_set
-        new_request_time = last_req_time
+        last_data_set = {"temp": temp, "hum": hum}
+        last_req_time = time()
 
-    return new_data_set, new_request_time
+    return last_data_set, last_req_time
 
 
 def update_string_pointers(string_pointers, data_set):
