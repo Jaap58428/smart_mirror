@@ -4,6 +4,16 @@ from time import time
 import random
 import socket
 from enum import Enum
+import os
+
+if os.name == 'nt':
+    from sensor import MotionSenseMock as MotionSense
+    from sensor import TempSenseMock as TempSense
+    from sensor import BoardMock as Board
+else:
+    from sensor import Board
+    from sensor import TempSense
+    from sensor import MotionSense
 
 settings = {
     "use_humidity_sensor": True,
@@ -14,9 +24,6 @@ settings = {
     "screen_max_frame_time_sec": 0.033  # equals to around 30fps
 }
 
-# import sys
-# #sys.path.append('/home/pi/smart_mirror/screen/sensor')
-# from sensor import Board, TempSense, MotionSense
 
 
 class Color(Enum):
@@ -84,14 +91,8 @@ def get_data_panel(parent, data_set):
     return updated_data_panel, string_pointers
 
 
-def get_mock_data():
-    return {
-        "temp": random.randint(1, 101),
-        "hum": random.randint(1, 101),
-    }
-
-
 def get_data(tmpsensor, motionsensor):
+
     (hum, temp) = tmpsensor.sense()
     hum = round(hum, 2)
     temp = round(temp, 2)
@@ -178,54 +179,54 @@ def get_debug_panel(parent):
 
 
 if __name__ == '__main__':
-    # with Board() as board, MotionSense(7) as motion, TempSense(17) as temp:
-    data_set = get_mock_data()
+    with Board() as _, MotionSense(7) as m, TempSense(17) as t:
+        data_set = get_data(t, m)
 
-    window = get_main_window()
+        window = get_main_window()
 
-    heat_image_panel = get_heat_image_panel(window)
-    data_panel, data_string_pointers = get_data_panel(window, data_set)
+        heat_image_panel = get_heat_image_panel(window)
+        data_panel, data_string_pointers = get_data_panel(window, data_set)
 
-    panels = [
-        heat_image_panel,
-        data_panel
-    ]
+        panels = [
+            heat_image_panel,
+            data_panel
+        ]
 
-    if settings["display_debug_panel"]:
-        debug_panel, debug_string_pointers = get_debug_panel(window)
-        panels.append(debug_panel)
+        if settings["display_debug_panel"]:
+            debug_panel, debug_string_pointers = get_debug_panel(window)
+            panels.append(debug_panel)
 
-    is_gui_shown = True
+        is_gui_shown = True
 
-    # At boot set start time
-    start_time = time()
-    while(True):
-        # If timer hasn't passed into sleep: ACTIVE
-        time_passed = time() - start_time
-        if time_passed < settings["sleep_timeout_sec"]:
-            stream_video()
+        # At boot set start time
+        start_time = time()
+        while(True):
+            # If timer hasn't passed into sleep: ACTIVE
+            time_passed = time() - start_time
+            if time_passed < settings["sleep_timeout_sec"]:
+                stream_video()
 
-            # Update data panel
-            data_set = get_mock_data()
-            update_string_pointers(data_string_pointers, data_set)
+                # Update data panel
+                data_set = get_data(t, m)
+                update_string_pointers(data_string_pointers, data_set)
 
-            if settings["display_debug_panel"] and settings["display_sleep_timer"]:
-                time_str = round(time_passed, 1)
-                timer_str = "Timer: {0} ({1})".format(str(time_str), settings["sleep_timeout_sec"])
-                debug_string_pointers["display_sleep_timer"].set(timer_str)
+                if settings["display_debug_panel"] and settings["display_sleep_timer"]:
+                    time_str = round(time_passed, 1)
+                    timer_str = "Timer: {0} ({1})".format(str(time_str), settings["sleep_timeout_sec"])
+                    debug_string_pointers["display_sleep_timer"].set(timer_str)
 
-            if movement():
-                start_time = time()
+                if movement():
+                    start_time = time()
 
-        # Else fall into PASSIVE, check for movement
-        else:
-            kill_gui(panels) if is_gui_shown else False
-            # Once movement is detected, show GUI and reset timer
-            if movement():
-                show_gui(panels)
-                start_time = time()
+            # Else fall into PASSIVE, check for movement
+            else:
+                kill_gui(panels) if is_gui_shown else False
+                # Once movement is detected, show GUI and reset timer
+                if movement():
+                    show_gui(panels)
+                    start_time = time()
 
-        window.update_idletasks()
-        window.update()
+            window.update_idletasks()
+            window.update()
 
-        sleep(settings["screen_max_frame_time_sec"])
+            sleep(settings["screen_max_frame_time_sec"])

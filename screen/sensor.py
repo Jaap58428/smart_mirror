@@ -36,10 +36,12 @@ class BoardMock(SensorBoard):
     def __exit__(self, *args):
         pass
 
+
 class Sensor(ABC):
     @abstractclassmethod
     def sense(self):
         pass
+
 
 class TempSense(Sensor):
     def __init__(self, pin):
@@ -56,6 +58,7 @@ class TempSense(Sensor):
         humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.DHT22, self.pin)
         return (humidity, temperature)
 
+
 class MotionSense(Sensor):
     def __init__(self, pin):
         self.pin = pin
@@ -71,6 +74,7 @@ class MotionSense(Sensor):
         current_state = GPIO.input(self.pin)
         return current_state
 
+
 class TempSenseMock(Sensor):
     def __init__(self, pin):
         self.pin = pin
@@ -83,6 +87,7 @@ class TempSenseMock(Sensor):
 
     def sense(self):
         return (42, 42)
+
 
 class MotionSenseMock(Sensor):
     def __init__(self, pin):
