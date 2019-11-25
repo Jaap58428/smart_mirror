@@ -25,11 +25,6 @@ struct MirrorConfig {
     ambient_temp_delay: usize,
 }
 
-#[get("/")]
-fn index() -> &'static str {
-    "Hello, world!"
-}
-
 #[get("/config")]
 fn config() -> Result<Json<MirrorConfig>, std::io::Error> {
     let file = File::open(&*CONFIG_FILE)?;
@@ -53,6 +48,6 @@ fn main() {
         .expect("Failed to build config");
 
     rocket::custom(config)
-        .mount("/", routes![index, config, submit])
+        .mount("/", routes![config, submit])
         .launch();
 }
