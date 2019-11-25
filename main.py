@@ -214,16 +214,18 @@ def get_ip_address():
 
 
 def get_heat_image_panel(parent):
-    heat_image_panel = tk.Frame(parent)
+    heat_image_panel = tk.Canvas(parent, width=300, height=300)
 
     heat_image_panel.configure(
         bg=Color.HEAT_PANEL.value,
     )
-    heat_image_panel.place(relwidth=0.2, relheight=0.2, anchor=tk.NW)
-
-    # TODO add video stream
+    heat_image_panel.pack(anchor=tk.NW)
 
     return heat_image_panel
+
+
+def update_heat_panel(panel, img):
+    panel.create_image((0, 0), image=img, anchor=tk.NW)
 
 
 def generate_data_labels(parent, data_set):
@@ -409,7 +411,7 @@ if __name__ == '__main__':
                                 display_temperature(img, minVal, minLoc, (255, 0, 0))
                                 display_temperature(img, maxVal, maxLoc, (0, 0, 255))
 
-                                heat_image_panel.configure(image=img)
+                                update_heat_panel(heat_image_panel, img)
 
                                 # cv2.imshow('Lepton Radiometry', img)
                                 # cv2.waitKey(1)
@@ -445,5 +447,5 @@ if __name__ == '__main__':
                             time.sleep(settings["screen_max_frame_time_sec"])
                         cv2.destroyAllWindows()
                     except Exception as e:
-                    print("[*] EXCEPTION OCCURED [*]")
-                    print(e)
+                        print("[*] EXCEPTION OCCURED [*]")
+                        print(e)
