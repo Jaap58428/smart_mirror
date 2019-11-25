@@ -6,6 +6,7 @@ import random
 import socket
 from enum import Enum
 import os
+import Pillow
 
 from uvctypes import *
 import time
@@ -214,8 +215,7 @@ def get_ip_address():
 
 
 def get_heat_image_panel(parent):
-    heat_image_panel = tk.Canvas(parent, width=300, height=300)
-
+    heat_image_panel = tk.Canvas(parent, width=480, height=640)
     heat_image_panel.configure(
         bg=Color.HEAT_PANEL.value,
     )
@@ -340,6 +340,12 @@ def get_debug_panel(parent):
     return updated_debug_panel, string_pointers
 
 
+def update_heat_panel(panel, img):
+    # Use PIL (Pillow) to convert the NumPy ndarray to a PhotoImage
+    photo = PIL.ImageTk.PhotoImage(image=PIL.Image.fromarray(img))
+    panel.create_image(0, 0, image=photo, anchor=tk.NW)
+
+
 if __name__ == '__main__':
     ctx = Context()
 
@@ -389,7 +395,6 @@ if __name__ == '__main__':
                     # At boot set start time
                     start_time = time.time()
 
-
                     try:
                         while True:
                             # If timer hasn't passed into sleep: ACTIVE
@@ -407,11 +412,10 @@ if __name__ == '__main__':
                                 display_temperature(img, minVal, minLoc, (255, 0, 0))
                                 display_temperature(img, maxVal, maxLoc, (0, 0, 255))
 
+                                update_heat_panel(heat_image_panel, img)
                                 heat_image_panel.create_image((0, 0), image=img, anchor=tk.NW)
 
-                                # cv2.imshow('Lepton Radiometry', img)
                                 cv2.waitKey(1)
-
 
                                 # Update data panel
                                 data_set, last_ambient_temp_req_time = get_ambient_temp_data(
