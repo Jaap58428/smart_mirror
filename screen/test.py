@@ -20,7 +20,7 @@ settings = {
     "display_host_ip": True,
     "display_sleep_timer": True,
     "display_debug_panel": True,
-    "sleep_timeout_sec": 30,
+    "sleep_timeout_sec": 10,
     "screen_max_frame_time_sec": 0.033,  # equals to around 30fps
     "ambient_temp_delay_sec": 5
 }
