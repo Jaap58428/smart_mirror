@@ -149,4 +149,5 @@ Cargo.lock
 **/*.rs.bk
 
 **/*.conf
+*.conf
 .env
