@@ -224,10 +224,6 @@ def get_heat_image_panel(parent):
     return heat_image_panel
 
 
-def update_heat_panel(panel, img):
-    panel.
-
-
 def generate_data_labels(parent, data_set):
     string_pointers = {}
     for attr, val in data_set.items():
