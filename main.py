@@ -225,7 +225,7 @@ def get_heat_image_panel(parent):
 
 
 def update_heat_panel(panel, img):
-    panel.create_image((0, 0), image=img, anchor=tk.NW)
+    panel.
 
 
 def generate_data_labels(parent, data_set):
@@ -411,10 +411,10 @@ if __name__ == '__main__':
                                 display_temperature(img, minVal, minLoc, (255, 0, 0))
                                 display_temperature(img, maxVal, maxLoc, (0, 0, 255))
 
-                                update_heat_panel(heat_image_panel, img)
+                                heat_image_panel.create_image((0, 0), image=img, anchor=tk.NW)
 
                                 # cv2.imshow('Lepton Radiometry', img)
-                                # cv2.waitKey(1)
+                                cv2.waitKey(1)
 
 
                                 # Update data panel
