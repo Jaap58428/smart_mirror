@@ -1,5 +1,6 @@
 from abc import ABC, abstractclassmethod
 import os
+import random
 
 if os.name == 'nt':
     pass
@@ -86,7 +87,9 @@ class TempSenseMock(Sensor):
         pass
 
     def sense(self):
-        return (42, 42)
+        temp = random.randint(20, 51)
+        hum = random.randint(20, 51)
+        return temp, hum
 
 
 class MotionSenseMock(Sensor):

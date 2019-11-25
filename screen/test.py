@@ -21,9 +21,9 @@ settings = {
     "display_sleep_timer": True,
     "display_debug_panel": True,
     "sleep_timeout_sec": 30,
-    "screen_max_frame_time_sec": 0.033  # equals to around 30fps
+    "screen_max_frame_time_sec": 0.033,  # equals to around 30fps
+    "ambient_temp_delay_sec": 5
 }
-
 
 
 class Color(Enum):
@@ -91,13 +91,19 @@ def get_data_panel(parent, data_set):
     return updated_data_panel, string_pointers
 
 
-def get_data(tmpsensor, motionsensor):
+def get_ambient_temp_data(tmpsensor, last_req_time, last_data_set):
+    if time() - last_req_time > settings["ambient_temp_delay_sec"] or last_data_set is 0:
+        (hum, temp) = tmpsensor.sense()
+        hum = round(hum, 2)
+        temp = round(temp, 2)
 
-    (hum, temp) = tmpsensor.sense()
-    hum = round(hum, 2)
-    temp = round(temp, 2)
-    motion = motionsensor.sense()
-    return {"temp": temp, "hum": hum, "motion": motion }
+        new_data_set = {"temp": temp, "hum": hum}
+        new_request_time = time()
+    else:
+        new_data_set = last_data_set
+        new_request_time = last_req_time
+
+    return new_data_set, new_request_time
 
 
 def update_string_pointers(string_pointers, data_set):
@@ -179,8 +185,15 @@ def get_debug_panel(parent):
 
 
 if __name__ == '__main__':
-    with Board() as _, MotionSense(7) as m, TempSense(17) as t:
-        data_set = get_data(t, m)
+    with Board() as _, MotionSense(7) as motion_sensor, TempSense(17) as ambient_temp_sensor:
+
+        last_ambient_temp_req_time = 0
+        data_set = 0
+        data_set, last_ambient_temp_req_time = get_ambient_temp_data(
+            ambient_temp_sensor,
+            last_ambient_temp_req_time,
+            data_set
+        )  # return dict for display
 
         window = get_main_window()
 
@@ -200,6 +213,7 @@ if __name__ == '__main__':
 
         # At boot set start time
         start_time = time()
+
         while(True):
             # If timer hasn't passed into sleep: ACTIVE
             time_passed = time() - start_time
@@ -207,7 +221,11 @@ if __name__ == '__main__':
                 stream_video()
 
                 # Update data panel
-                data_set = get_data(t, m)
+                data_set, last_ambient_temp_req_time = get_ambient_temp_data(
+                    ambient_temp_sensor,
+                    last_ambient_temp_req_time,
+                    data_set
+                )
                 update_string_pointers(data_string_pointers, data_set)
 
                 if settings["display_debug_panel"] and settings["display_sleep_timer"]:
