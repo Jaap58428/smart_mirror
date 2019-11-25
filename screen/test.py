@@ -48,6 +48,15 @@ def get_main_window():
     return window
 
 
+def get_ip_address():
+    ip_address = ''
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    ip_address = s.getsockname()[0]
+    s.close()
+    return ip_address
+
+
 def get_heat_image_panel(parent):
     heat_image_panel = tk.Frame(parent)
     heat_image_panel.configure(
@@ -154,7 +163,7 @@ def generate_debug_labels(parent):
         )
         timer_label.pack()
     if settings["display_host_ip"]:
-        ip = str(socket.gethostbyname(socket.gethostname()))
+        ip = get_ip_address()
         string_pointers["display_host_ip"] = tk.StringVar()
         string_pointers["display_host_ip"].set("Mirror network address: {0}".format(ip))
         ip_label = tk.Label(parent)
