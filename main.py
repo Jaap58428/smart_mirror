@@ -211,6 +211,25 @@ def get_ip_address():
     return ip_address
 
 
+# CANVAS VERSION
+# def get_heat_image_panel(parent):
+#     path = "./fire.png"
+#     path_ref = cv2.imread(path)
+#     cv2_ref = cv2.cvtColor(path_ref, cv2.COLOR_BGR2RGB)
+#     img_ref = Image.fromarray(cv2_ref)
+#     tk_img_ref = ImageTk.PhotoImage(img_ref)
+#
+#     heat_image_panel = tk.Canvas(
+#         parent,
+#         width=480,
+#         height=640,
+#     )
+#     heat_image_panel.create_image(0, 0, image=tk_img_ref)
+#     heat_image_panel.place(anchor=tk.NW)
+#     return heat_image_panel
+
+
+# CANVAS VERSION
 def get_heat_image_panel(parent):
     path = "./fire.png"
     path_ref = cv2.imread(path)
@@ -218,12 +237,12 @@ def get_heat_image_panel(parent):
     img_ref = Image.fromarray(cv2_ref)
     tk_img_ref = ImageTk.PhotoImage(img_ref)
 
-    heat_image_panel = tk.Canvas(
+    heat_image_panel = tk.Label(
         parent,
         width=480,
         height=640,
     )
-    heat_image_panel.create_image(0, 0, image=tk_img_ref)
+    heat_image_panel.image = tk_img_ref
     heat_image_panel.place(anchor=tk.NW)
     return heat_image_panel
 
