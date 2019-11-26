@@ -229,7 +229,7 @@ def get_heat_image_panel(parent):
     )
     heat_image_panel.image = cv_img
 
-    heat_image_panel.pack(side=tk.TOP, anchor=tk.E)
+    heat_image_panel.pack(side=tk.TOP, anchor=tk.W)
 
     return heat_image_panel
 
