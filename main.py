@@ -8,7 +8,6 @@ from enum import Enum
 import os
 from PIL import Image
 from PIL import ImageTk
-from tkinter import filedialog
 from uvctypes import *
 import time
 import cv2
@@ -19,7 +18,6 @@ try:
 except ImportError:
     from Queue import Queue
 import platform
-
 
 if os.name == 'nt':
     from sensor import MotionSenseMock as MotionSense
@@ -39,7 +37,6 @@ settings = {
     "screen_max_frame_time_sec": 0.033,  # equals to around 30fps
     "ambient_temp_delay_sec": 5
 }
-
 
 BUF_SIZE = 10
 q = Queue(BUF_SIZE)
@@ -183,7 +180,6 @@ class Stream():
         libuvc.uvc_stop_streaming(self.context.handle)
 
 
-
 class Color(Enum):
     BACKGROUND = "#000"
     FONT_COLOR = "#FFF"
@@ -215,21 +211,34 @@ def get_ip_address():
     return ip_address
 
 
+# CANVAS VERSION
+# def get_heat_image_panel(parent):
+#     path = "./fire.png"
+#     path_ref = cv2.imread(path)
+#     cv2_ref = cv2.cvtColor(path_ref, cv2.COLOR_BGR2RGB)
+#     img_ref = Image.fromarray(cv2_ref)
+#     tk_img_ref = ImageTk.PhotoImage(img_ref)
+#
+#     heat_image_panel = tk.Canvas(
+#         parent,
+#         width=480,
+#         height=640,
+#     )
+#     heat_image_panel.create_image(0, 0, image=tk_img_ref)
+#     heat_image_panel.place(anchor=tk.NW)
+#     return heat_image_panel
+
+
+# CANVAS VERSION
 def get_heat_image_panel(parent):
-    # path = filedialog.askopenfilename()
-    path = "/home/jaap/smart_mirror/fire.png"
-    cv_img = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2RGB)
-    height, width, no_channels = cv_img.shape
-
-    heat_image_panel = tk.Canvas(parent, width=width, height=height)
-    heat_image_panel.configure(
-	border=0
+    heat_image_panel = tk.Label(
+        parent,
+        border=0,
+        bg=Color.BACKGROUND.value,
+        width=640,
+        height=480,
     )
-    heat_image_panel.pack(anchor=tk.NW)
-
-    photo = ImageTk.PhotoImage(image=Image.fromarray(cv_img))
-    heat_image_panel.create_image(0,0,image=photo, anchor=tk.NW)
-
+    heat_image_panel.pack(side=tk.TOP, anchor=tk.W)
     return heat_image_panel
 
 
@@ -283,7 +292,7 @@ def update_string_pointers(string_pointers, data_set):
 
 def kill_gui(gui_elements):
     # heat image panel, requires place_remove()
-    gui_elements[0].place_forget()
+    gui_elements[0].pack_forget()
 
     # data & debug panel require pack_forget()
     gui_elements[1].pack_forget()
@@ -293,7 +302,7 @@ def kill_gui(gui_elements):
 
 def show_gui(gui_elements):
     # heat image panel, requires place_remove()
-    gui_elements[0].place(relwidth=0.2, relheight=0.2, anchor=tk.NW)
+    gui_elements[0].pack(side=tk.TOP, anchor=tk.W)
 
     # data & debug panel require pack_forget()
     gui_elements[1].pack(side=tk.TOP, anchor=tk.E)
@@ -349,11 +358,11 @@ def get_debug_panel(parent):
     return updated_debug_panel, string_pointers
 
 
-def update_heat_panel(panel, img):
-    # Use PIL (Pillow) to convert the NumPy ndarray to a PhotoImage
-    im = Image.fromarray(img)
-    photo = ImageTk.PhotoImage(image=im)
-    panel.create_image(0, 0, image=photo, anchor=tk.NW)
+# def update_heat_panel(panel, img):
+#     # Use PIL (Pillow) to convert the NumPy ndarray to a PhotoImage
+#     im = Image.fromarray(img)
+#     photo = ImageTk.PhotoImage(image=im)
+#     panel.create_image(0, 0, image=photo, anchor=tk.NW)
 
 
 if __name__ == '__main__':
@@ -412,24 +421,24 @@ if __name__ == '__main__':
                             if time_passed < settings["sleep_timeout_sec"]:
 
                                 # GET IMAGE FROM CAMERA
-                               # data = q.get(True, 500)
-                               # if data is None:
-                               #     print("[*] DATA WAS NOONE [*]")
-                               #     break
-                               # data = cv2.resize(data[:, :], (640, 480))
-                               # minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
-                               # img = raw_to_8bit(data)
-                               # display_temperature(img, minVal, minLoc, (255, 0, 0))
-                               # display_temperature(img, maxVal, maxLoc, (0, 0, 255))
+                                data = q.get(True, 500)
+                                if data is None:
+                                    print("[*] DATA WAS NOONE [*]")
+                                    break
+                                data = cv2.resize(data[:, :], (640, 480))
+                                minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
+                                img = raw_to_8bit(data)
+                                display_temperature(img, minVal, minLoc, (255, 0, 0))
+                                display_temperature(img, maxVal, maxLoc, (0, 0, 255))
 
-                               # img = cv2.imread('fire.png')
-                               # b, g, r = cv2.split(img)
-                               # img = cv2.merge((r, g, b))
+                                cv_img = Image.fromarray(img)
+                                tk_img = ImageTk.PhotoImage(cv_img)
+                                heat_image_panel.configure(
+                                    image=tk_img
+                                )
+                                heat_image_panel.image = tk_img
 
-                                #update_heat_panel(heat_image_panel, img)
-                                #heat_image_panel.create_image((0, 0), image=img, anchor=tk.NW)
-
-                                #cv2.waitKey(1)
+                                cv2.waitKey(1)
 
                                 # Update data panel
                                 data_set, last_ambient_temp_req_time = get_ambient_temp_data(
