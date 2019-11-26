@@ -212,20 +212,18 @@ def get_ip_address():
 
 
 def get_heat_image_panel(parent):
-    # path = filedialog.askopenfilename()
     path = "./fire.png"
     im = cv2.imread(path)
     cv_img = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
     cv_img = Image.fromarray(cv_img)
     cv_img = ImageTk.PhotoImage(cv_img)
 
-    heat_image_panel = tk.Label(
+    heat_image_panel = tk.Canvas(
         parent,
         width=480,
         height=640,
-        image=cv_img
     )
-    heat_image_panel.image = cv_img
+    heat_image_panel.create_image(20, 20, image=cv_img)
     heat_image_panel.pack(side=tk.TOP, anchor=tk.W)
     return heat_image_panel
 
