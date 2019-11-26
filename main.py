@@ -233,13 +233,13 @@ def get_ip_address():
 def get_heat_image_panel(parent):
     path = "./fire.png"
     path_ref = cv2.imread(path)
-    print(path_ref)
+    print("path_ref", path_ref)
     cv2_ref = cv2.cvtColor(path_ref, cv2.COLOR_BGR2RGB)
-    print(cv2_ref)
+    print("cv2_ref", cv2_ref)
     img_ref = Image.fromarray(cv2_ref)
-    print(img_ref)
+    print("img_ref", img_ref)
     tk_img_ref = ImageTk.PhotoImage(img_ref)
-    print(tk_img_ref)
+    print("tk_img_ref", tk_img_ref)
 
     heat_image_panel = tk.Label(
         parent,
@@ -441,12 +441,12 @@ if __name__ == '__main__':
                                 display_temperature(img, minVal, minLoc, (255, 0, 0))
                                 display_temperature(img, maxVal, maxLoc, (0, 0, 255))
 
-                                print(img)
+                                print("MAIN img", img)
 
                                 cv_img = Image.fromarray(img)
-                                print(cv_img)
+                                print("MAIN cv_img", cv_img)
                                 tk_img = ImageTk.PhotoImage(cv_img)
-                                print(tk_img)
+                                print("MAIN tk_img", tk_img)
 
                                 heat_image_panel.image = tk_img
 
