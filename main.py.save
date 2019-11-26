@@ -216,8 +216,8 @@ def get_ip_address():
 
 
 def get_heat_image_panel(parent):
-    # path = filedialog.askopenfilename()
-    path = "/home/jaap/smart_mirror/fire.png"
+   # path = ename()
+   # print(path)  #"/home/jaap/smart_mirror/fire.png"
     cv_img = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2RGB)
     height, width, no_channels = cv_img.shape
 
