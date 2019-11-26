@@ -233,7 +233,7 @@ def get_ip_address():
 def get_heat_image_panel(parent):
     path = "./fire.png"
     path_ref = cv2.imread(path)
-    print("path_ref", path_ref)
+    print("path_ref", type(path_ref))
     cv2_ref = cv2.cvtColor(path_ref, cv2.COLOR_BGR2RGB)
     print("cv2_ref", cv2_ref)
     img_ref = Image.fromarray(cv2_ref)
@@ -441,7 +441,7 @@ if __name__ == '__main__':
                                 display_temperature(img, minVal, minLoc, (255, 0, 0))
                                 display_temperature(img, maxVal, maxLoc, (0, 0, 255))
 
-                                print("MAIN img", img)
+                                print("MAIN img", type(img))
 
                                 cv_img = Image.fromarray(img)
                                 print("MAIN cv_img", cv_img)
