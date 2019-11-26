@@ -224,7 +224,7 @@ def get_heat_image_panel(parent):
         height=640,
     )
     heat_image_panel.create_image(20, 20, image=cv_img)
-    heat_image_panel.place(side=tk.TOP, anchor=tk.W)
+    heat_image_panel.place(anchor=tk.NW)
     return heat_image_panel
 
 
