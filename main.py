@@ -442,13 +442,14 @@ if __name__ == '__main__':
                                 display_temperature(img, maxVal, maxLoc, (0, 0, 255))
 
                                 print("MAIN img", img)
-
-                                inverted_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                                cv_img = Image.fromarray(inverted_img)
+                                # inverted_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                                cv_img = Image.fromarray(img)
                                 print("MAIN cv_img", cv_img)
                                 tk_img = ImageTk.PhotoImage(cv_img)
                                 print("MAIN tk_img", tk_img)
-
+                                heat_image_panel.configure(
+                                    image=tk_img
+                                )
                                 heat_image_panel.image = tk_img
 
                                 cv2.waitKey(1)
