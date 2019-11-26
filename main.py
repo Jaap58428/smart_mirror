@@ -277,8 +277,13 @@ def update_string_pointers(string_pointers, data_set):
 
 
 def kill_gui(gui_elements):
-    for element in gui_elements:
-        element.pack_forget()
+    # heat image panel, requires place_remove()
+    gui_elements[0].place_forget()
+
+    # data & debug panel require pack_forget()
+    gui_elements[1].pack_forget()
+    if settings["display_debug_panel"]:
+        gui_elements[2].pack_forget()
 
 
 def show_gui(gui_elements):
