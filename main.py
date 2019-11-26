@@ -443,7 +443,8 @@ if __name__ == '__main__':
 
                                 print("MAIN img", type(img))
 
-                                cv_img = Image.fromarray(img)
+                                inverted_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                                cv_img = Image.fromarray(inverted_img)
                                 print("MAIN cv_img", cv_img)
                                 tk_img = ImageTk.PhotoImage(cv_img)
                                 print("MAIN tk_img", tk_img)
