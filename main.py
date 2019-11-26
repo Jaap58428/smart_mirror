@@ -231,14 +231,10 @@ def get_ip_address():
 
 # CANVAS VERSION
 def get_heat_image_panel(parent):
-    # path = "./fire.png"
-    # path_ref = cv2.imread(path)
-    # cv2_ref = cv2.cvtColor(path_ref, cv2.COLOR_BGR2RGB)
-    # img_ref = Image.fromarray(cv2_ref)
-    # tk_img_ref = ImageTk.PhotoImage(img_ref)
-
     heat_image_panel = tk.Label(
         parent,
+        border=0,
+        bg=Color.BACKGROUND.value,
         width=640,
         height=480,
     )
