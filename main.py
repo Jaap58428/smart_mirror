@@ -213,17 +213,17 @@ def get_ip_address():
 
 def get_heat_image_panel(parent):
     path = "./fire.png"
-    im = cv2.imread(path)
-    cv_img = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-    cv_img = Image.fromarray(cv_img)
-    cv_img = ImageTk.PhotoImage(cv_img)
+    path_ref = cv2.imread(path)
+    cv2_ref = cv2.cvtColor(path_ref, cv2.COLOR_BGR2RGB)
+    img_ref = Image.fromarray(cv2_ref)
+    tk_img_ref = ImageTk.PhotoImage(img_ref)
 
     heat_image_panel = tk.Canvas(
         parent,
         width=480,
         height=640,
     )
-    heat_image_panel.create_image(20, 20, image=cv_img)
+    heat_image_panel.create_image(0, 0, image=tk_img_ref)
     heat_image_panel.place(anchor=tk.NW)
     return heat_image_panel
 
@@ -288,7 +288,7 @@ def kill_gui(gui_elements):
 
 def show_gui(gui_elements):
     # heat image panel, requires place_remove()
-    gui_elements[0].pack(side=tk.TOP, anchor=tk.W)
+    gui_elements[0].place(anchor=tk.NW)
 
     # data & debug panel require pack_forget()
     gui_elements[1].pack(side=tk.TOP, anchor=tk.E)
@@ -344,11 +344,11 @@ def get_debug_panel(parent):
     return updated_debug_panel, string_pointers
 
 
-def update_heat_panel(panel, img):
-    # Use PIL (Pillow) to convert the NumPy ndarray to a PhotoImage
-    im = Image.fromarray(img)
-    photo = ImageTk.PhotoImage(image=im)
-    panel.create_image(0, 0, image=photo, anchor=tk.NW)
+# def update_heat_panel(panel, img):
+#     # Use PIL (Pillow) to convert the NumPy ndarray to a PhotoImage
+#     im = Image.fromarray(img)
+#     photo = ImageTk.PhotoImage(image=im)
+#     panel.create_image(0, 0, image=photo, anchor=tk.NW)
 
 
 if __name__ == '__main__':
