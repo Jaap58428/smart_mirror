@@ -11,7 +11,8 @@ use rocket_contrib::json::Json;
 use std::fs::File;
 
 lazy_static! {
-    static ref CONFIG_FILE: String = { dotenv::var("CONFIG_FILE").expect("No env file!") };
+    static ref CONFIG_FILE: String =
+        dotenv::var("CONFIG_FILE").unwrap_or_else(|_| String::from("config.config"));
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -25,13 +26,28 @@ struct MirrorConfig {
     ambient_temp_delay: usize,
 }
 
+impl Default for MirrorConfig {
+    #[inline(always)]
+    fn default() -> Self {
+        MirrorConfig {
+            use_humidity: false,
+            display_host_ip: true,
+            display_sleep_timer: false,
+            display_debug_panel: false,
+            sleep_timeout_sec: 10,
+            screen_max_frame_rate: 0.033,
+            ambient_temp_delay: 2,
+        }
+    }
+}
+
 #[get("/config")]
-fn config() -> Result<Json<MirrorConfig>, std::io::Error> {
-    let file = File::open(&*CONFIG_FILE)?;
+fn config() -> Json<MirrorConfig> {
+    let config = File::open(&*CONFIG_FILE)
+        .and_then(|file| serde_json::from_reader(file).map_err(|e| e.into()))
+        .unwrap_or_default();
 
-    let conf = serde_json::from_reader(file)?;
-
-    Ok(Json(conf))
+    Json(config)
 }
 
 #[post("/config", data = "<config>")]
