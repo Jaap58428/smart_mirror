@@ -8,7 +8,6 @@ from enum import Enum
 import os
 from PIL import Image
 from PIL import ImageTk
-from tkinter import filedialog
 from uvctypes import *
 import time
 import cv2
@@ -224,14 +223,13 @@ def get_heat_image_panel(parent):
 
     heat_image_panel = tk.Label(
         parent,
-        width=img_width,
-        height=img_height,
+        width=480,
+        height=640,
         image=cv_img
     )
     heat_image_panel.image = cv_img
 
     heat_image_panel.pack()
-    # heat_image_panel.create_image(0, 0, image=cv_img, anchor=tk.NW)
 
     return heat_image_panel
 
@@ -285,18 +283,13 @@ def update_string_pointers(string_pointers, data_set):
 
 
 def kill_gui(gui_elements):
-    # heat image panel, requires place_remove()
-    gui_elements[0].place_forget()
-
-    # data & debug panel require pack_forget()
-    gui_elements[1].pack_forget()
-    if settings["display_debug_panel"]:
-        gui_elements[2].pack_forget()
+    for element in gui_elements:
+        element.pack_forget()
 
 
 def show_gui(gui_elements):
     # heat image panel, requires place_remove()
-    gui_elements[0].place(relwidth=0.2, relheight=0.2, anchor=tk.NW)
+    gui_elements[0].pack(width=480, height=640, anchor=tk.NW)
 
     # data & debug panel require pack_forget()
     gui_elements[1].pack(side=tk.TOP, anchor=tk.E)
