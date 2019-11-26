@@ -223,6 +223,7 @@ def get_heat_image_panel(parent):
 
     heat_image_panel = tk.Label(
         parent,
+        bg=Color.HEAT_PANEL.value,
         width=480,
         height=640,
         image=cv_img
