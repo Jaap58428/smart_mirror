@@ -239,10 +239,11 @@ def get_heat_image_panel(parent):
 
     heat_image_panel = tk.Label(
         parent,
+        image=tk_img_ref,
         width=480,
         height=640,
     )
-    heat_image_panel.image = tk_img_ref
+    # heat_image_panel.image = tk_img_ref
     heat_image_panel.pack(side=tk.TOP, anchor=tk.W)
     return heat_image_panel
 
@@ -297,7 +298,7 @@ def update_string_pointers(string_pointers, data_set):
 
 def kill_gui(gui_elements):
     # heat image panel, requires place_remove()
-    gui_elements[0].place_forget()
+    gui_elements[0].pack_forget()
 
     # data & debug panel require pack_forget()
     gui_elements[1].pack_forget()
@@ -307,7 +308,7 @@ def kill_gui(gui_elements):
 
 def show_gui(gui_elements):
     # heat image panel, requires place_remove()
-    gui_elements[0].place(anchor=tk.NW)
+    gui_elements[0].pack(side=tk.TOP, anchor=tk.W)
 
     # data & debug panel require pack_forget()
     gui_elements[1].pack(side=tk.TOP, anchor=tk.E)
