@@ -216,21 +216,17 @@ def get_heat_image_panel(parent):
     path = "./fire.png"
     im = cv2.imread(path)
     cv_img = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-    img_height, img_width, no_channels = cv_img.shape
     cv_img = Image.fromarray(cv_img)
-
     cv_img = ImageTk.PhotoImage(cv_img)
 
-    heat_image_panel = tk.Frame(
+    heat_image_panel = tk.Label(
         parent,
         width=480,
         height=640,
         image=cv_img
     )
     heat_image_panel.image = cv_img
-
     heat_image_panel.pack(side=tk.TOP, anchor=tk.W)
-
     return heat_image_panel
 
 
@@ -408,24 +404,22 @@ if __name__ == '__main__':
                             if time_passed < settings["sleep_timeout_sec"]:
 
                                 # GET IMAGE FROM CAMERA
-                                # data = q.get(True, 500)
-                                # if data is None:
-                                #     print("[*] DATA WAS NOONE [*]")
-                                #     break
-                                # data = cv2.resize(data[:, :], (640, 480))
-                                # minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
-                                # img = raw_to_8bit(data)
-                                # display_temperature(img, minVal, minLoc, (255, 0, 0))
-                                # display_temperature(img, maxVal, maxLoc, (0, 0, 255))
-                                #
-                                # img = cv2.imread('fire.png')
-                                # b, g, r = cv2.split(img)
-                                # img = cv2.merge((r, g, b))
+                                data = q.get(True, 500)
+                                if data is None:
+                                    print("[*] DATA WAS NOONE [*]")
+                                    break
+                                data = cv2.resize(data[:, :], (640, 480))
+                                minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
+                                img = raw_to_8bit(data)
+                                display_temperature(img, minVal, minLoc, (255, 0, 0))
+                                display_temperature(img, maxVal, maxLoc, (0, 0, 255))
 
-                                # update_heat_panel(heat_image_panel, img)
-                                # heat_image_panel.create_image((0, 0), image=img, anchor=tk.NW)
+                                cv_img = Image.fromarray(img)
+                                cv_img = ImageTk.PhotoImage(cv_img)
 
-                                # cv2.waitKey(1)
+                                heat_image_panel.image = cv_img
+
+                                cv2.waitKey(1)
 
                                 # Update data panel
                                 data_set, last_ambient_temp_req_time = get_ambient_temp_data(
