@@ -229,7 +229,7 @@ def get_heat_image_panel(parent):
     )
     heat_image_panel.image = cv_img
 
-    heat_image_panel.pack()
+    heat_image_panel.pack(side=tk.TOP, anchor=tk.E)
 
     return heat_image_panel
 
@@ -289,7 +289,7 @@ def kill_gui(gui_elements):
 
 def show_gui(gui_elements):
     # heat image panel, requires place_remove()
-    gui_elements[0].pack(width=480, height=640, anchor=tk.NW)
+    gui_elements[0].pack(side=tk.TOP, anchor=tk.W)
 
     # data & debug panel require pack_forget()
     gui_elements[1].pack(side=tk.TOP, anchor=tk.E)
