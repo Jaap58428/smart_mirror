@@ -222,7 +222,7 @@ def get_heat_image_panel(parent):
 
     cv_img = ImageTk.PhotoImage(cv_img)
 
-    heat_image_panel = tk.Canvas(
+    heat_image_panel = tk.Label(
         parent,
         width=img_width,
         height=img_height,
@@ -231,7 +231,7 @@ def get_heat_image_panel(parent):
     heat_image_panel.image = cv_img
 
     heat_image_panel.pack()
-    heat_image_panel.create_image(0, 0, image=cv_img, anchor=tk.NW)
+    # heat_image_panel.create_image(0, 0, image=cv_img, anchor=tk.NW)
 
     return heat_image_panel
 
