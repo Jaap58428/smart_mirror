@@ -6,7 +6,8 @@ import random
 import socket
 from enum import Enum
 import os
-import Pillow
+from PIL import Image
+from PIL import ImageTk
 
 from uvctypes import *
 import time
@@ -342,7 +343,8 @@ def get_debug_panel(parent):
 
 def update_heat_panel(panel, img):
     # Use PIL (Pillow) to convert the NumPy ndarray to a PhotoImage
-    photo = PIL.ImageTk.PhotoImage(image=PIL.Image.fromarray(img))
+    im = Image.fromarray(img)
+    photo = ImageTk.PhotoImage(image=im)
     panel.create_image(0, 0, image=photo, anchor=tk.NW)
 
 
@@ -402,15 +404,20 @@ if __name__ == '__main__':
                             if time_passed < settings["sleep_timeout_sec"]:
 
                                 # GET IMAGE FROM CAMERA
-                                data = q.get(True, 500)
-                                if data is None:
-                                    print("[*] DATA WAS NOONE [*]")
-                                    break
-                                data = cv2.resize(data[:, :], (640, 480))
-                                minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
-                                img = raw_to_8bit(data)
-                                display_temperature(img, minVal, minLoc, (255, 0, 0))
-                                display_temperature(img, maxVal, maxLoc, (0, 0, 255))
+                               # data = q.get(True, 500)
+                               # if data is None:
+                               #     print("[*] DATA WAS NOONE [*]")
+                               #     break
+                               # data = cv2.resize(data[:, :], (640, 480))
+                               # minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
+                               # img = raw_to_8bit(data)
+                               # display_temperature(img, minVal, minLoc, (255, 0, 0))
+                               # display_temperature(img, maxVal, maxLoc, (0, 0, 255))
+
+				img = cv2.imread('fire.png')
+				b, g, r = cv2.split(img)
+				img = cv2.merge((r, g, b))
+
 
                                 update_heat_panel(heat_image_panel, img)
                                 heat_image_panel.create_image((0, 0), image=img, anchor=tk.NW)
