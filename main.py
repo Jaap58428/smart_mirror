@@ -8,7 +8,7 @@ from enum import Enum
 import os
 from PIL import Image
 from PIL import ImageTk
-
+from tkinter import filedialog
 from uvctypes import *
 import time
 import cv2
@@ -216,11 +216,19 @@ def get_ip_address():
 
 
 def get_heat_image_panel(parent):
-    heat_image_panel = tk.Canvas(parent, width=480, height=640)
+    path = filedialog.askopenfilename()
+    print(path)  #"/home/jaap/smart_mirror/fire.png"
+    cv_img = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2RGB)
+    height, width, no_channels = cv_img.shape
+
+    heat_image_panel = tk.Canvas(parent, width=width, height=height)
     heat_image_panel.configure(
-        bg=Color.HEAT_PANEL.value,
+	border=0
     )
     heat_image_panel.pack(anchor=tk.NW)
+
+    photo = ImageTk.PhotoImage(image=Image.fromarray(cv_img))
+    heat_image_panel.create_image(0,0,image=photo, anchor=tk.NW)
 
     return heat_image_panel
 
@@ -414,14 +422,14 @@ if __name__ == '__main__':
                                # display_temperature(img, minVal, minLoc, (255, 0, 0))
                                # display_temperature(img, maxVal, maxLoc, (0, 0, 255))
 
-                                img = cv2.imread('fire.png')
-                                b, g, r = cv2.split(img)
-                                img = cv2.merge((r, g, b))
+                               # img = cv2.imread('fire.png')
+                               # b, g, r = cv2.split(img)
+                               # img = cv2.merge((r, g, b))
 
-                                update_heat_panel(heat_image_panel, img)
-                                heat_image_panel.create_image((0, 0), image=img, anchor=tk.NW)
+                                #update_heat_panel(heat_image_panel, img)
+                                #heat_image_panel.create_image((0, 0), image=img, anchor=tk.NW)
 
-                                cv2.waitKey(1)
+                                #cv2.waitKey(1)
 
                                 # Update data panel
                                 data_set, last_ambient_temp_req_time = get_ambient_temp_data(
