@@ -404,22 +404,22 @@ if __name__ == '__main__':
                             if time_passed < settings["sleep_timeout_sec"]:
 
                                 # GET IMAGE FROM CAMERA
-                                data = q.get(True, 500)
-                                if data is None:
-                                    print("[*] DATA WAS NOONE [*]")
-                                    break
-                                data = cv2.resize(data[:, :], (640, 480))
-                                minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
-                                img = raw_to_8bit(data)
-                                display_temperature(img, minVal, minLoc, (255, 0, 0))
-                                display_temperature(img, maxVal, maxLoc, (0, 0, 255))
-
-                                cv_img = Image.fromarray(img)
-                                cv_img = ImageTk.PhotoImage(cv_img)
-
-                                heat_image_panel.image = cv_img
-
-                                cv2.waitKey(1)
+                                # data = q.get(True, 500)
+                                # if data is None:
+                                #     print("[*] DATA WAS NOONE [*]")
+                                #     break
+                                # data = cv2.resize(data[:, :], (640, 480))
+                                # minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
+                                # img = raw_to_8bit(data)
+                                # display_temperature(img, minVal, minLoc, (255, 0, 0))
+                                # display_temperature(img, maxVal, maxLoc, (0, 0, 255))
+                                #
+                                # cv_img = Image.fromarray(img)
+                                # cv_img = ImageTk.PhotoImage(cv_img)
+                                #
+                                # heat_image_panel.image = cv_img
+                                #
+                                # cv2.waitKey(1)
 
                                 # Update data panel
                                 data_set, last_ambient_temp_req_time = get_ambient_temp_data(
