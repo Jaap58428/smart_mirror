@@ -1,0 +1,15 @@
+[package]
+name = "rocket"
+version = "0.1.0"
+authors = ["Dodo <kasper199914@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rocket = "0.4.2"
+serde = {version = "1.0.94", features = ["derive"]}
+serde_json = "*"
+rocket_contrib = "0.4.2"
+dotenv = "*"
+lazy_static = "*"
