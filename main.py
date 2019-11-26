@@ -414,10 +414,9 @@ if __name__ == '__main__':
                                # display_temperature(img, minVal, minLoc, (255, 0, 0))
                                # display_temperature(img, maxVal, maxLoc, (0, 0, 255))
 
-				img = cv2.imread('fire.png')
-				b, g, r = cv2.split(img)
-				img = cv2.merge((r, g, b))
-
+                                img = cv2.imread('fire.png')
+                                b, g, r = cv2.split(img)
+                                img = cv2.merge((r, g, b))
 
                                 update_heat_panel(heat_image_panel, img)
                                 heat_image_panel.create_image((0, 0), image=img, anchor=tk.NW)
