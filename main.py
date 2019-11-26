@@ -243,7 +243,7 @@ def get_heat_image_panel(parent):
         width=480,
         height=640,
     )
-    # heat_image_panel.image = tk_img_ref
+    heat_image_panel.image = tk_img_ref
     heat_image_panel.pack(side=tk.TOP, anchor=tk.W)
     return heat_image_panel
 
