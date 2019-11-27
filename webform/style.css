@@ -1,0 +1,9 @@
+body, html {
+    background-color: rgb(128, 177, 233);
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+}
+
+.wrapper {
+    margin: 0 auto;
+    max-width: 80vw;
+}
