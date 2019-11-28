@@ -1,6 +1,6 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
-use rocket::{get, post, routes};
+use rocket::{delete, get, post, routes};
 
 use serde::{Deserialize, Serialize};
 
@@ -8,7 +8,10 @@ use lazy_static::lazy_static;
 use rocket::config::{Config, Environment};
 use rocket_contrib::json::Json;
 
-use std::fs::File;
+use std::{
+    fs::File,
+    io::{self, Write},
+};
 
 lazy_static! {
     static ref CONFIG_FILE: String =
@@ -41,19 +44,36 @@ impl Default for MirrorConfig {
     }
 }
 
+impl MirrorConfig {
+    fn to_writer_pretty(&self, writer: &mut impl Write) -> Result<(), serde_json::error::Error> {
+        serde_json::to_writer_pretty(writer, self)
+    }
+}
+
 #[get("/config")]
 fn config() -> Json<MirrorConfig> {
     let config = File::open(&*CONFIG_FILE)
-        .and_then(|file| serde_json::from_reader(file).map_err(|e| e.into()))
+        .and_then(|file| serde_json::from_reader(file).map_err(Into::into))
         .unwrap_or_default();
 
     Json(config)
 }
 
 #[post("/config", data = "<config>")]
-fn submit(config: Json<MirrorConfig>) -> Result<(), serde_json::error::Error> {
-    let mut file = File::create(&*CONFIG_FILE).unwrap();
-    serde_json::to_writer_pretty(&mut file, &config.into_inner())
+fn submit(config: Json<MirrorConfig>) -> Result<(), io::Error> {
+    let mut file = File::create(&*CONFIG_FILE)?;
+    config.into_inner().to_writer_pretty(&mut file)?;
+
+    Ok(())
+}
+
+#[delete("/config")]
+fn reset() -> Result<Json<MirrorConfig>, io::Error> {
+    let mut file = File::create(&*CONFIG_FILE)?;
+    let default_config = MirrorConfig::default();
+    default_config.to_writer_pretty(&mut file)?;
+
+    Ok(Json(default_config))
 }
 
 fn main() {
@@ -64,6 +84,6 @@ fn main() {
         .expect("Failed to build config");
 
     rocket::custom(config)
-        .mount("/", routes![config, submit])
+        .mount("/", routes![config, submit, reset])
         .launch();
 }
