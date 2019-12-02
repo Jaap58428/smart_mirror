@@ -1,14 +1,22 @@
-const customSubmit = (event) => {
-    event.preventDefault();
-    console.log(event.target);
+const attributes = {
+    "use_humidity": "Use humidity",
+    "display_host_ip": "Display Host IP",
+    "display_sleep_timer": "Display sleep timer",
+    "display_debug_panel": "Display debug panel",
+    "sleep_timeout_sec": "Time untill sleepmode in seconds",
+    "screen_max_frame_rate": "Max screen refresh rate (FPS)",
+    "ambient_temp_delay": "Ambient temperature samplerate in seconds",
+}
 
-    let results = event.target
+const customSubmit = (clickEvent) => {
+    results = document.getElementById("form")
+    console.log(results);
 
     for (const result in results) {
         if (results.hasOwnProperty(result)) {
             const element = results[result];
-            console.log(element.value);
-            
+            console.log(result, element.value);
+
         }
     }
 }
@@ -16,7 +24,7 @@ const customSubmit = (event) => {
 const buildFormElement = (attribute, value, formElementType) => {
     let label = document.createElement("label")
     label.setAttribute("for", attribute)
-    label.innerHTML = attribute
+    label.innerHTML = attributes[attribute]
 
     let input = document.createElement("input")
     input.setAttribute("name", attribute)
@@ -30,14 +38,21 @@ const buildFormElement = (attribute, value, formElementType) => {
             if (value) {
                 input.setAttribute("checked", true)
             }
-
+            label.classList.add("clickable")
             break;
 
         case "integer":
-        case "float":
             input.setAttribute("type", "number")
             input.setAttribute("min", 0)
             input.setAttribute("max", 120)
+            input.setAttribute("step", 1)
+            input.value = value
+            break;
+        case "float":
+            input.setAttribute("type", "number")
+            input.setAttribute("min", 0)
+            input.setAttribute("max", 1)
+            input.setAttribute("step", 0.001)
             input.value = value
             break;
 
@@ -81,8 +96,37 @@ const getFormElementType = (attribute) => {
     return formElementType
 }
 
+const resetConfig = (clickEvent) => {
+    form = document.getElementById("form")
+    console.log(form);
+    
+}
+
+const setFormButtons = (configObject) => {
+    let submitButton = document.createElement("span")
+    submitButton.classList.add("button")
+    submitButton.classList.add("submitbutton")
+    submitButton.innerHTML = "Save"
+    submitButton.addEventListener("click", customSubmit)
+
+    let resetButton = document.createElement("span")
+    resetButton.classList.add("button")
+    resetButton.classList.add("resetbutton")
+    resetButton.innerHTML = "Reset"
+    resetButton.addEventListener("click", resetConfig)
+
+    let buttonBox = document.createElement("div")
+    buttonBox.classList.add("buttonbox")
+    buttonBox.appendChild(resetButton)
+    buttonBox.appendChild(submitButton)
+
+    let form = document.getElementById("form")
+    form.appendChild(buttonBox)
+}
+
 const loadConfigToForm = (response) => {
-    const configObject = JSON.parse(response);
+    // const configObject = JSON.parse(response)
+    const configObject = response
     console.log("Starting form construct loop through response");
     for (const attribute in configObject) {
         if (configObject.hasOwnProperty(attribute)) {
@@ -94,18 +138,7 @@ const loadConfigToForm = (response) => {
     }
 
     if (Object.keys(configObject).length > 0) {
-        let submitButton = document.createElement("button")
-        submitButton.classList.add("submitbutton")
-        submitButton.innerHTML = "Save"
-
-        let inputbox = document.createElement("div")
-        inputbox.classList.add("formInputBox")
-        inputbox.appendChild(submitButton)
-
-        let form = document.getElementById("form")
-
-        form.appendChild(inputbox)
-        form.onsubmit = customSubmit
+        setFormButtons(configObject)
     } else {
         console.warn("No attributes are returned to edit!");
     }
@@ -123,12 +156,12 @@ const getCurrentConfig = (configGetUrl) => {
         }
     };
     xhttp.open("GET", configGetUrl, true);
-    xhttp.send();
+    // xhttp.send();
     console.log("Fetching config from Smart Mirror...", configGetUrl);
 
 
     // PURE FOR DEBUG PURPOSES, REMOVE LATER
-    response = `{
+    response = {
         "use_humidity": false,
         "display_host_ip": true,
         "display_sleep_timer": false,
@@ -136,7 +169,7 @@ const getCurrentConfig = (configGetUrl) => {
         "sleep_timeout_sec": 10,
         "screen_max_frame_rate": 0.033,
         "ambient_temp_delay": 2,
-    }`
+    }
     loadConfigToForm(response)
 }
 

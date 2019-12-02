@@ -1,7 +1,8 @@
 body,
 html {
-    background-color: rgb(128, 177, 233);
+    background-image: linear-gradient(155deg, rgb(172, 245, 255), rgb(120, 172, 231));
     font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    font-size: 1.1rem;
     padding: 0;
     margin: 0;
 }
@@ -16,7 +17,7 @@ html {
 header,
 main {
     padding: 25px;
-    background-color: lightgray;
+    background-color: rgb(255, 255, 255);
     margin-bottom: 25px;
 }
 
@@ -27,11 +28,71 @@ main section {
 form label {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding: 10px;
-    margin-bottom: 10px;
-    background-color: rgb(127, 176, 255);
+    margin-bottom: 25px;
+    background-image: linear-gradient(155deg, rgb(172, 245, 255), rgb(120, 172, 231));
+    border-radius: 5px;
+    transition: all 0.5s;
 }
 
-form label:hover {
+input {
+    max-width: 20%;
+    padding: 10px;
+    font-size: 1.1rem;
+}
+
+label:hover {
+    cursor: pointer;
     filter: brightness(110%);
+}
+
+.buttonbox {
+    display: flex;
+    justify-content: space-between;
+}
+
+.button {
+    width: 50px;
+    text-align: center;
+    display: inline-block;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 10px;
+    border: solid 3px;
+}
+
+.submitbutton {
+    border-color:rgb(81, 97, 240);
+    color: rgb(81, 97, 240);
+}
+
+.submitbutton:hover {
+    background-color: rgb(81, 97, 240);
+    color:rgb(255, 255, 255);
+}
+
+.resetbutton {
+    border-color: rgb(214, 20, 59);
+    color: rgb(214, 20, 59);
+}
+
+.resetbutton:hover {
+    background-color: rgb(214, 20, 59);
+    color:rgb(255, 255, 255);
+}
+
+
+@media only screen and (max-width: 600px) {
+
+    header,
+    main {
+        margin-bottom: 0px;
+    }
+
+    .wrapper {
+        width: 100vw;
+    }
+
 }
