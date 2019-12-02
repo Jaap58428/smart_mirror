@@ -1,11 +1,11 @@
 const attributes = {
-    "use_humidity": "Use humidity",
+    "use_humidity": "Use humidity sensor",
     "display_host_ip": "Display Host IP",
     "display_sleep_timer": "Display sleep timer",
     "display_debug_panel": "Display debug panel",
-    "sleep_timeout_sec": "Time untill sleepmode in seconds",
+    "sleep_timeout_sec": "Time untill sleepmode (seconds)",
     "screen_max_frame_rate": "Max screen refresh rate (FPS)",
-    "ambient_temp_delay": "Ambient temperature samplerate in seconds",
+    "ambient_temp_delay": "Ambient temperature samplerate (seconds)",
 }
 
 const customSubmit = (clickEvent) => {
