@@ -1,3 +1,4 @@
+const apiUrl = "/api/config"
 const attributes = {
     "use_humidity": "Use humidity sensor",
     "display_host_ip": "Display Host IP",
@@ -8,6 +9,21 @@ const attributes = {
     "ambient_temp_delay": "Ambient temperature samplerate (seconds)",
 }
 
+const getCurrentConfig = (configGetUrl) => {
+    console.log("Building config fetch");
+    response = {
+        "use_humidity": false,
+        "display_host_ip": true,
+        "display_sleep_timer": false,
+        "display_debug_panel": false,
+        "sleep_timeout_sec": 10,
+        "screen_max_frame_rate": 0.033,
+        "ambient_temp_delay": 2,
+    }
+    loadResponseToForm(response)
+    // xmlHttpRequest("GET", loadResponseToForm)
+}
+
 const customSubmit = (clickEvent) => {
     results = document.getElementById("form")
     console.log(results);
@@ -15,10 +31,56 @@ const customSubmit = (clickEvent) => {
     for (const result in results) {
         if (results.hasOwnProperty(result)) {
             const element = results[result];
-            console.log(result, element.value);
-
         }
     }
+}
+
+const resetConfig = (clickEvent) => {
+    if (confirm("Are you sure? This will delete your current configuration.")) {
+        console.warn("Delete request send.");
+        xmlHttpRequest("GET", loadResponseToForm)
+        alert("Config has been reset to DEFAULT values.")
+    } else {
+        console.log("Reset cancelled");
+    }
+}
+
+const clearForm = () => {
+    document.getElementById("form").innerHTML = ""
+}
+
+const loadingNewConfigAnimation = (httpRequestType, apiUrl) => {
+    form = document.getElementById("form")
+    loadingbox = document.createElement("div")
+    loadingbox.classList.add("loadingbox")
+
+    loadinginfo = document.createElement("div")
+    loadinginfo.classList.add("loadinginfo")
+    loadinginfo.innerHTML = "Loading configuration..."
+
+    loadingAnimation = document.createElement("div")
+    loadingAnimation.classList.add("loader")
+
+    loadingbox.appendChild(loadinginfo)
+    loadingbox.appendChild(loadingAnimation)
+
+    form.appendChild(loadingbox)
+}
+
+const xmlHttpRequest = (requestType, callbackFunction) => {
+    const url = "/api/config"
+    var xhttp = new XMLHttpRequest();
+
+    xhttp.onreadystatechange = () => {
+        if (this.readyState == 4 && this.status == 200) {
+            clearForm()
+            callbackFunction(xhttp.response)
+        }
+    };
+    xhttp.open(requestType, url, true);
+    clearForm()
+    xhttp.send();
+    loadingNewConfigAnimation()
 }
 
 const buildFormElement = (attribute, value, formElementType) => {
@@ -111,12 +173,6 @@ const getFormElementType = (attribute) => {
     return formElementType
 }
 
-const resetConfig = (clickEvent) => {
-    form = document.getElementById("form")
-    console.log(form);
-
-}
-
 const setFormButtons = (configObject) => {
     let submitButton = document.createElement("span")
     submitButton.classList.add("button")
@@ -139,7 +195,7 @@ const setFormButtons = (configObject) => {
     form.appendChild(buttonBox)
 }
 
-const loadConfigToForm = (response) => {
+const loadResponseToForm = (response) => {
     // const configObject = JSON.parse(response)
     const configObject = response
     console.log("Starting form construct loop through response");
@@ -160,38 +216,9 @@ const loadConfigToForm = (response) => {
 
 }
 
-const getCurrentConfig = (configGetUrl) => {
-    console.log("Building config fetch");
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = () => {
-        if (this.readyState == 4 && this.status == 200) {
-            console.log("Succesfull response:");
-            console.log(xhttp.response);
-            loadConfigToForm(response)
-        }
-    };
-    xhttp.open("GET", configGetUrl, true);
-    xhttp.send();
-    console.log("Fetching config from Smart Mirror...", configGetUrl);
-
-
-    // PURE FOR DEBUG PURPOSES, REMOVE LATER
-    // response = {
-    //     "use_humidity": false,
-    //     "display_host_ip": true,
-    //     "display_sleep_timer": false,
-    //     "display_debug_panel": false,
-    //     "sleep_timeout_sec": 10,
-    //     "screen_max_frame_rate": 0.033,
-    //     "ambient_temp_delay": 2,
-    // }
-    // loadConfigToForm(response)
-}
-
 const main = () => {
     console.log("Page has loaded");
-    const configGetUrl = "../config"
-    getCurrentConfig(configGetUrl)
+    getCurrentConfig("GET", loadResponseToForm)
 }
 
 window.addEventListener("load", main)
