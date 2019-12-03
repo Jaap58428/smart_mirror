@@ -24,21 +24,32 @@ const customSubmit = (clickEvent) => {
 const buildFormElement = (attribute, value, formElementType) => {
     let label = document.createElement("label")
     label.setAttribute("for", attribute)
+    label.classList.add("attribute_field")
     label.innerHTML = attributes[attribute]
 
     let input = document.createElement("input")
     input.setAttribute("name", attribute)
     input.setAttribute("id", attribute)
 
-    label.appendChild(input)
 
     switch (formElementType) {
         case "boolean":
             input.setAttribute("type", "checkbox")
+            input.classList.add("toggle_input")
             if (value) {
                 input.setAttribute("checked", true)
             }
-            label.classList.add("clickable")
+            let toggle_label = document.createElement("label")
+            toggle_label.classList.add("toggle_label")
+
+            let toggle_switch = document.createElement("span")
+            toggle_switch.classList.add("toggle_switch")
+
+            toggle_label.appendChild(toggle_switch)
+
+            label.appendChild(input)
+            label.appendChild(toggle_label)
+
             break;
 
         case "integer":
@@ -47,6 +58,8 @@ const buildFormElement = (attribute, value, formElementType) => {
             input.setAttribute("max", 120)
             input.setAttribute("step", 1)
             input.value = value
+            label.appendChild(input)
+
             break;
         case "float":
             input.setAttribute("type", "number")
@@ -54,6 +67,8 @@ const buildFormElement = (attribute, value, formElementType) => {
             input.setAttribute("max", 1)
             input.setAttribute("step", 0.001)
             input.value = value
+            label.appendChild(input)
+
             break;
 
         default:
@@ -99,7 +114,7 @@ const getFormElementType = (attribute) => {
 const resetConfig = (clickEvent) => {
     form = document.getElementById("form")
     console.log(form);
-    
+
 }
 
 const setFormButtons = (configObject) => {
