@@ -5,7 +5,6 @@ use rocket::{delete, get, post, routes};
 use serde::{Deserialize, Serialize};
 
 use lazy_static::lazy_static;
-use rocket::config::{Config, Environment};
 use rocket_contrib::json::Json;
 
 use std::{
@@ -77,13 +76,7 @@ fn reset() -> Result<Json<MirrorConfig>, io::Error> {
 }
 
 fn main() {
-    let config = Config::build(Environment::Staging)
-        .address("0.0.0.0")
-        .port(8000)
-        .finalize()
-        .expect("Failed to build config");
-
-    rocket::custom(config)
+    rocket::ignite()
         .mount("/", routes![config, submit, reset])
         .launch();
 }
