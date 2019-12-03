@@ -171,21 +171,21 @@ const getCurrentConfig = (configGetUrl) => {
         }
     };
     xhttp.open("GET", configGetUrl, true);
-    // xhttp.send();
+    xhttp.send();
     console.log("Fetching config from Smart Mirror...", configGetUrl);
 
 
     // PURE FOR DEBUG PURPOSES, REMOVE LATER
-    response = {
-        "use_humidity": false,
-        "display_host_ip": true,
-        "display_sleep_timer": false,
-        "display_debug_panel": false,
-        "sleep_timeout_sec": 10,
-        "screen_max_frame_rate": 0.033,
-        "ambient_temp_delay": 2,
-    }
-    loadConfigToForm(response)
+    // response = {
+    //     "use_humidity": false,
+    //     "display_host_ip": true,
+    //     "display_sleep_timer": false,
+    //     "display_debug_panel": false,
+    //     "sleep_timeout_sec": 10,
+    //     "screen_max_frame_rate": 0.033,
+    //     "ambient_temp_delay": 2,
+    // }
+    // loadConfigToForm(response)
 }
 
 const main = () => {
