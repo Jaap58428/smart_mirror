@@ -190,7 +190,7 @@ const getCurrentConfig = (configGetUrl) => {
 
 const main = () => {
     console.log("Page has loaded");
-    const configGetUrl = "/config"
+    const configGetUrl = "../config"
     getCurrentConfig(configGetUrl)
 }
 
