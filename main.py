@@ -6,12 +6,31 @@ import random
 import socket
 from enum import Enum
 import os
+import json
 from PIL import Image
 from PIL import ImageTk
 from uvctypes import *
 import time
 import cv2
 import numpy as np
+from pathlib import Path  # python3 only
+from dotenv import load_dotenv
+
+env_path = Path('/home/pi/rocket') / '.env'
+load_dotenv(dotenv_path=env_path)
+config_path = os.getenv("CONFIG_FILE")
+with open(config_path, "r") as f:
+    settings = json.load(f)
+
+# settings = {
+#     "use_humidity_sensor": True,
+#     "display_host_ip": True,
+#     "display_sleep_timer": True,
+#     "display_debug_panel": True,
+#     "sleep_timeout_sec": 10,
+#     "screen_max_frame_time_sec": 0.033,  # equals to around 30fps
+#     "ambient_temp_delay_sec": 5
+# }
 
 try:
     from queue import Queue
@@ -28,15 +47,7 @@ else:
     from sensor import TempSense
     from sensor import MotionSense
 
-settings = {
-    "use_humidity_sensor": True,
-    "display_host_ip": True,
-    "display_sleep_timer": True,
-    "display_debug_panel": True,
-    "sleep_timeout_sec": 10,
-    "screen_max_frame_time_sec": 0.033,  # equals to around 30fps
-    "ambient_temp_delay_sec": 5
-}
+
 
 BUF_SIZE = 10
 q = Queue(BUF_SIZE)
