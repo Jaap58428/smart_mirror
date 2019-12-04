@@ -478,7 +478,8 @@ if __name__ == '__main__':
                             window.update_idletasks()
                             window.update()
 
-                            time.sleep(settings["screen_max_frame_time_sec"])
+                            # FPS = how many frames fit in one seconds, so 1 sec / FPS to sleep
+                            time.sleep((1 / settings["screen_max_frame_time_sec"]))
                         cv2.destroyAllWindows()
                     except Exception as e:
                         print("[*] EXCEPTION OCCURED [*]")
