@@ -9,8 +9,8 @@ const attributes = {
     "ambient_temp_delay": "Ambient temperature samplerate (seconds)",
 }
 
-const getCurrentConfig = (configGetUrl) => {
-    console.log("Building config fetch");
+const getConfig = () => {
+    console.log("Fetching current config...");
     response = {
         "use_humidity": false,
         "display_host_ip": true,
@@ -21,25 +21,36 @@ const getCurrentConfig = (configGetUrl) => {
         "ambient_temp_delay": 2,
     }
     loadResponseToForm(response)
-    // xmlHttpRequest("GET", loadResponseToForm)
+    // xmlHttpRequest("GET", loadResponseToForm, null, null)
 }
 
-const customSubmit = (clickEvent) => {
+const submitConfig = (clickEvent) => {
     results = document.getElementById("form")
     console.log(results);
+
+    httpBody = {}
 
     for (const result in results) {
         if (results.hasOwnProperty(result)) {
             const element = results[result];
+            console.log(element.id, element.value);
+            httpBody[element.id] = element.value
         }
     }
+
+    xmlHttpRequest(
+        "POST",
+        loadResponseToForm,
+        "New config has been saved",
+        JSON.stringify(httpBody)
+    )
 }
 
 const resetConfig = (clickEvent) => {
     if (confirm("Are you sure? This will delete your current configuration.")) {
         console.warn("Delete request send.");
-        xmlHttpRequest("GET", loadResponseToForm)
-        alert("Config has been reset to DEFAULT values.")
+        readyMessage = "Config has been reset to DEFAULT values."
+        xmlHttpRequest("GET", loadResponseToForm, readyMessage, null)
     } else {
         console.log("Reset cancelled");
     }
@@ -49,7 +60,7 @@ const clearForm = () => {
     document.getElementById("form").innerHTML = ""
 }
 
-const loadingNewConfigAnimation = (httpRequestType, apiUrl) => {
+const loadingNewConfigAnimation = () => {
     form = document.getElementById("form")
     loadingbox = document.createElement("div")
     loadingbox.classList.add("loadingbox")
@@ -67,19 +78,20 @@ const loadingNewConfigAnimation = (httpRequestType, apiUrl) => {
     form.appendChild(loadingbox)
 }
 
-const xmlHttpRequest = (requestType, callbackFunction) => {
+const xmlHttpRequest = (requestType, callbackFunction, readyMessage, requestBody) => {
     const url = "/api/config"
     var xhttp = new XMLHttpRequest();
 
     xhttp.onreadystatechange = () => {
         if (this.readyState == 4 && this.status == 200) {
             clearForm()
+            alert(readyMessage)
             callbackFunction(xhttp.response)
         }
     };
     xhttp.open(requestType, url, true);
     clearForm()
-    xhttp.send();
+    xhttp.send(requestBody);
     loadingNewConfigAnimation()
 }
 
@@ -117,20 +129,8 @@ const buildFormElement = (attribute, value, formElementType) => {
         case "integer":
             input.setAttribute("type", "number")
             input.setAttribute("min", 0)
-            input.setAttribute("max", 120)
-            input.setAttribute("step", 1)
             input.value = value
             label.appendChild(input)
-
-            break;
-        case "float":
-            input.setAttribute("type", "number")
-            input.setAttribute("min", 0)
-            input.setAttribute("max", 1)
-            input.setAttribute("step", 0.001)
-            input.value = value
-            label.appendChild(input)
-
             break;
 
         default:
@@ -143,8 +143,6 @@ const buildFormElement = (attribute, value, formElementType) => {
     inputbox.appendChild(label)
 
     document.getElementById("form").appendChild(inputbox)
-    // Add element to DOM
-
 }
 
 const getFormElementType = (attribute) => {
@@ -159,11 +157,9 @@ const getFormElementType = (attribute) => {
 
         case "sleep_timeout_sec":
         case "ambient_temp_delay":
-            formElementType = "integer"
-            break;
-
         case "screen_max_frame_rate":
-            formElementType = "float"
+            formElementType = "integer"
+            break
 
         default:
             console.warn("Invalid form element type!", attribute);
@@ -173,12 +169,12 @@ const getFormElementType = (attribute) => {
     return formElementType
 }
 
-const setFormButtons = (configObject) => {
+const setFormButtons = () => {
     let submitButton = document.createElement("span")
     submitButton.classList.add("button")
     submitButton.classList.add("submitbutton")
     submitButton.innerHTML = "Save"
-    submitButton.addEventListener("click", customSubmit)
+    submitButton.addEventListener("click", submitConfig)
 
     let resetButton = document.createElement("span")
     resetButton.classList.add("button")
@@ -196,29 +192,30 @@ const setFormButtons = (configObject) => {
 }
 
 const loadResponseToForm = (response) => {
-    // const configObject = JSON.parse(response)
+    if (typeof response == "string") {
+        response = JSON.parse(response)
+    }
     const configObject = response
-    console.log("Starting form construct loop through response");
+    console.log("Starting form construction from response");
     for (const attribute in configObject) {
         if (configObject.hasOwnProperty(attribute)) {
             const value = configObject[attribute];
-            console.log("Building form element for:", attribute);
             const formElementType = getFormElementType(attribute)
             buildFormElement(attribute, value, formElementType)
         }
     }
 
     if (Object.keys(configObject).length > 0) {
-        setFormButtons(configObject)
+        setFormButtons()
     } else {
-        console.warn("No attributes are returned to edit!");
+        console.error("No attributes are returned to edit!");
     }
 
 }
 
 const main = () => {
     console.log("Page has loaded");
-    getCurrentConfig("GET", loadResponseToForm)
+    getConfig()
 }
 
 window.addEventListener("load", main)
