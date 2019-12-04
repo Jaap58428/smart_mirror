@@ -5,12 +5,17 @@ use rocket::{delete, get, post, routes};
 use serde::{Deserialize, Serialize};
 
 use lazy_static::lazy_static;
-use rocket_contrib::json::Json;
+use rocket_contrib::{
+    serve::StaticFiles,
+    json::Json,
+};
 
 use std::{
     fs::File,
     io::{self, Write},
 };
+
+mod cors;
 
 lazy_static! {
     static ref CONFIG_FILE: String =
@@ -77,6 +82,8 @@ fn reset() -> Result<Json<MirrorConfig>, io::Error> {
 
 fn main() {
     rocket::ignite()
-        .mount("/", routes![config, submit, reset])
+        .mount("/", StaticFiles::from("static"))
+        .mount("/api", routes![config, submit, reset])
+        .attach(cors::make_cors())
         .launch();
 }
