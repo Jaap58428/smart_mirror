@@ -1,6 +1,6 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
-use rocket::{delete, get, post, routes};
+use rocket::{delete, get, post, routes, response::NamedFile};
 
 use serde::{Deserialize, Serialize};
 
@@ -80,9 +80,14 @@ fn reset() -> Result<Json<MirrorConfig>, io::Error> {
     Ok(Json(default_config))
 }
 
+#[get("/")]
+fn index() -> io::Result<NamedFile> {
+    NamedFile::open("/home/ghost/smart_mirror/static/index.html")
+}
+
 fn main() {
     rocket::ignite()
-        .mount("/", StaticFiles::from("static"))
+        .mount("/", routes![index])
         .mount("/api", routes![config, submit, reset])
         .attach(cors::make_cors())
         .launch();
