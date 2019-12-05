@@ -278,12 +278,12 @@
         const url = "/api/config"
         var xhttp = new XMLHttpRequest();
 
-        xhttp.onreadystatechange = () => {
-            if (this.readyState == 4 && this.status == 200) {
-                clearForm()
-                alert(readyMessage)
-                callbackFunction(xhttp.response)
-            }
+        xhttp.onload = () => {
+	    console.warn(xhttp.response)
+            
+            clearForm()
+            alert(readyMessage)
+            callbackFunction(xhttp.response)
         };
         xhttp.open(requestType, url, true);
         clearForm()
