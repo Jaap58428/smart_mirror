@@ -1,0 +1,38 @@
+mirror.conf
+mirror.conf
+mirror.conf
+mirror.conf
+mirror.conf
+Version gpp: 3.3.26 dsp: 3.3.26
+FLIR part #: b'500-0771-01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+FLIR serial #: b'\xf8B2\x01\x00\x00\x00\x00'
+format: b'UYVY'
+  frame 160x120 @ 9fps
+format: b'Y16 '
+  frame 160x120 @ 9fps
+  frame 160x122 @ 9fps
+format: b'Y8  '
+  frame 160x120 @ 9fps
+format: b'RGBP'
+  frame 160x120 @ 9fps
+format: b'}\xeb6\xe4'
+  frame 160x120 @ 9fps
+Estimated / selected altsetting bandwith : 18 / 962. 
+mirror.conf
+Version gpp: 3.3.26 dsp: 3.3.26
+FLIR part #: b'500-0771-01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+FLIR serial #: b'\xf8B2\x01\x00\x00\x00\x00'
+format: b'UYVY'
+  frame 160x120 @ 9fps
+format: b'Y16 '
+  frame 160x120 @ 9fps
+  frame 160x122 @ 9fps
+format: b'Y8  '
+  frame 160x120 @ 9fps
+format: b'RGBP'
+  frame 160x120 @ 9fps
+format: b'}\xeb6\xe4'
+  frame 160x120 @ 9fps
+[*] EXCEPTION OCCURED [*]
+'screen_max_frame_time_sec'
+Estimated / selected altsetting bandwith : 18 / 962. 

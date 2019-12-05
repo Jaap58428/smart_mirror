@@ -206,18 +206,18 @@
     }
 
     const getConfig = () => {
-        console.log("Fetching current config...");
-        response = {
-            "use_humidity": false,
-            "display_host_ip": true,
-            "display_sleep_timer": false,
-            "display_debug_panel": false,
-            "sleep_timeout_sec": 10,
-            "screen_max_frame_rate": 0.033,
-            "ambient_temp_delay": 2,
-        }
-        loadResponseToForm(response)
-        // xmlHttpRequest("GET", loadResponseToForm, null, null)
+        //console.log("Fetching current config...");
+        //response = {
+        //    "use_humidity": false,
+        //    "display_host_ip": true,
+        //    "display_sleep_timer": false,
+        //    "display_debug_panel": false,
+        //    "sleep_timeout_sec": 10,
+        //    "screen_max_frame_rate": 0.033,
+        //    "ambient_temp_delay": 2,
+        //}
+        //loadResponseToForm(response)
+        xmlHttpRequest("GET", loadResponseToForm, null, null)
     }
 
     const submitConfig = (clickEvent) => {
