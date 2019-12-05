@@ -230,23 +230,28 @@
             if (results.hasOwnProperty(result)) {
                 const element = results[result];
                 console.log(element.id, element.value);
-                httpBody[element.id] = element.value
+		    if(element.type == "checkbox"){
+		    	httpBody[element.id] = element.checked
+		    }else {
+			    httpBody[element.id] = Number(element.value)}
             }
         }
 
+
+	console.warn(httpBody)
+	
         xmlHttpRequest(
             "POST",
             loadResponseToForm,
             "New config has been saved",
-            JSON.stringify(httpBody)
-        )
+		JSON.stringify(httpBody))
     }
 
     const resetConfig = (clickEvent) => {
         if (confirm("Are you sure? This will delete your current configuration.")) {
             console.warn("Delete request send.");
             readyMessage = "Config has been reset to DEFAULT values."
-            xmlHttpRequest("GET", loadResponseToForm, readyMessage, null)
+            xmlHttpRequest("DELETE", loadResponseToForm, readyMessage, null)
         } else {
             console.log("Reset cancelled");
         }
@@ -286,6 +291,7 @@
             callbackFunction(xhttp.response)
         };
         xhttp.open(requestType, url, true);
+	xhttp.setRequestHeader("Content-Type", "application/json")
         clearForm()
         xhttp.send(requestBody);
         loadingNewConfigAnimation()
