@@ -38,7 +38,10 @@ else:
     from sensor import TempSense
     from sensor import MotionSense
 
-
+LABEL_STRINGS = {
+    "temp": "Ambient temperature",
+    "hum": "Ambient humidity",
+}
 
 BUF_SIZE = 10
 q = Queue(BUF_SIZE)
@@ -219,24 +222,6 @@ def get_ip_address():
 
 
 # CANVAS VERSION
-# def get_heat_image_panel(parent):
-#     path = "./fire.png"
-#     path_ref = cv2.imread(path)
-#     cv2_ref = cv2.cvtColor(path_ref, cv2.COLOR_BGR2RGB)
-#     img_ref = Image.fromarray(cv2_ref)
-#     tk_img_ref = ImageTk.PhotoImage(img_ref)
-#
-#     heat_image_panel = tk.Canvas(
-#         parent,
-#         width=480,
-#         height=640,
-#     )
-#     heat_image_panel.create_image(0, 0, image=tk_img_ref)
-#     heat_image_panel.place(anchor=tk.NW)
-#     return heat_image_panel
-
-
-# CANVAS VERSION
 def get_heat_image_panel(parent):
     heat_image_panel = tk.Label(
         parent,
@@ -253,7 +238,8 @@ def generate_data_labels(parent, data_set):
     string_pointers = {}
     for attr, val in data_set.items():
         string_pointers[attr] = tk.StringVar()
-        string_pointers[attr].set('{0}: {1}'.format(attr, str(val)))
+        attr_string = LABEL_STRINGS[attr]
+        string_pointers[attr].set('{0}: {1}'.format(attr_string, str(val)))
         new_label = tk.Label(parent)
         new_label.configure(
             textvariable=string_pointers[attr],
