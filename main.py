@@ -194,7 +194,8 @@ def get_main_window():
     window = tk.Tk()
     window.title("Smart Mirror GUI")
     window.configure(
-        bg=Color.BACKGROUND.value
+        bg=Color.BACKGROUND.value,
+        cursor="none"
     )
 
     window.focus_set()
