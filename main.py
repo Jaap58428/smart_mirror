@@ -23,16 +23,6 @@ print(config_path)
 with open('/home/ghost/smart_mirror/rocket/' + config_path, "r") as f:
     settings = json.load(f)
 
-# settings = {
-#     "use_humidity_sensor": True,
-#     "display_host_ip": True,
-#     "display_sleep_timer": True,
-#     "display_debug_panel": True,
-#     "sleep_timeout_sec": 10,
-#     "screen_max_frame_time_sec": 0.033,  # equals to around 30fps
-#     "ambient_temp_delay_sec": 5
-# }
-
 try:
     from queue import Queue
 except ImportError:
@@ -215,13 +205,16 @@ def get_main_window():
 
 
 def get_ip_address():
-   # ip_address = ''
-   # s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-   # s.connect(("8.8.8.8", 80))
-   # ip_address = s.getsockname()[0]
-   # s.close()
-   # return ip_address
-    return 9001
+    ip_address = "UNKNOWN"
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip_address = s.getsockname()[0]
+    except e:
+        print(e)
+    finally:
+        s.close()
+        return ip_address
 
 
 # CANVAS VERSION
