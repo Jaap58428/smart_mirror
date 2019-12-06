@@ -441,8 +441,8 @@ if __name__ == '__main__':
                                 data = cv2.resize(data[:, :], (640, 480))
                                 minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
                                 img = raw_to_8bit(data)
-                                display_temperature(img, minVal, minLoc, (255, 0, 0))
-                                display_temperature(img, maxVal, maxLoc, (0, 0, 255))
+                                display_temperature(img, minVal, minLoc, (0, 0, 255))
+                                display_temperature(img, maxVal, maxLoc, (255, 0, 0))
 
                                 cv_img = Image.fromarray(img)
                                 tk_img = ImageTk.PhotoImage(cv_img)
