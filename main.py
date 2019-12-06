@@ -291,6 +291,10 @@ def get_ambient_temp_data(tmpsensor, last_req_time, last_data_set):
         temp = round(temp, 2)
 
         last_data_set = {"temp": temp, "hum": hum}
+        
+        if not settings["use_humidity"]:
+            del last_data_set["use_humidity"] 
+
         last_req_time = time.time()
 
     return last_data_set, last_req_time
