@@ -19,18 +19,9 @@ from dotenv import load_dotenv
 env_path = Path('/home/pi/rocket') / '.env'
 load_dotenv(dotenv_path=env_path)
 config_path = os.getenv("CONFIG_FILE")
-with open(config_path, "r") as f:
+print(config_path)
+with open('/home/ghost/smart_mirror/rocket/' + config_path, "r") as f:
     settings = json.load(f)
-
-# settings = {
-#     "use_humidity_sensor": True,
-#     "display_host_ip": True,
-#     "display_sleep_timer": True,
-#     "display_debug_panel": True,
-#     "sleep_timeout_sec": 10,
-#     "screen_max_frame_time_sec": 0.033,  # equals to around 30fps
-#     "ambient_temp_delay_sec": 5
-# }
 
 try:
     from queue import Queue
@@ -92,8 +83,8 @@ def raw_to_8bit(data):
 
 
 def display_temperature(img, val_k, loc, color):
-    val = ktof(val_k)
-    cv2.putText(img, "{0:.1f} degF".format(val), loc, cv2.FONT_HERSHEY_SIMPLEX, 0.75, color, 2)
+    val = ktoc(val_k)
+    cv2.putText(img, "{0:.1f} degC".format(val), loc, cv2.FONT_HERSHEY_DUPLEX, 0.75, color, 2)
     x, y = loc
     cv2.line(img, (x - 2, y), (x + 2, y), color, 1)
     cv2.line(img, (x, y - 2), (x, y + 2), color, 1)
@@ -214,12 +205,16 @@ def get_main_window():
 
 
 def get_ip_address():
-    ip_address = ''
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("8.8.8.8", 80))
-    ip_address = s.getsockname()[0]
-    s.close()
-    return ip_address
+    ip_address = "UNKNOWN"
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip_address = s.getsockname()[0]
+    except e:
+        print(e)
+    finally:
+        s.close()
+        return ip_address
 
 
 # CANVAS VERSION
@@ -285,7 +280,7 @@ def get_data_panel(parent, data_set):
 
 
 def get_ambient_temp_data(tmpsensor, last_req_time, last_data_set):
-    if time.time() - last_req_time > settings["ambient_temp_delay_sec"]:
+    if time.time() - last_req_time > settings["ambient_temp_delay"]:
         (hum, temp) = tmpsensor.sense()
         hum = round(hum, 2)
         temp = round(temp, 2)
@@ -443,8 +438,8 @@ if __name__ == '__main__':
                                 data = cv2.resize(data[:, :], (640, 480))
                                 minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
                                 img = raw_to_8bit(data)
-                                display_temperature(img, minVal, minLoc, (255, 0, 0))
-                                display_temperature(img, maxVal, maxLoc, (0, 0, 255))
+                                display_temperature(img, minVal, minLoc, (0, 0, 255))
+                                display_temperature(img, maxVal, maxLoc, (255, 0, 0))
 
                                 cv_img = Image.fromarray(img)
                                 tk_img = ImageTk.PhotoImage(cv_img)
@@ -483,7 +478,7 @@ if __name__ == '__main__':
                             window.update()
 
                             # FPS = how many frames fit in one seconds, so 1 sec / FPS to sleep
-                            time.sleep((1 / settings["screen_max_frame_time_sec"]))
+                            time.sleep((1 / settings.get("screen_max_frame_rate", 1)))
                         cv2.destroyAllWindows()
                     except Exception as e:
                         print("[*] EXCEPTION OCCURED [*]")

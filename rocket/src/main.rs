@@ -1,17 +1,14 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
-use rocket::{delete, get, post, routes};
+use rocket::{catch, catchers, delete, get, post, request::Request, response::NamedFile, routes};
 
 use serde::{Deserialize, Serialize};
 
 use lazy_static::lazy_static;
-use rocket_contrib::{
-    serve::StaticFiles,
-    json::Json,
-};
+use rocket_contrib::json::Json;
 
 use std::{
-    fs::File,
+    fs::{File, OpenOptions},
     io::{self, Write},
 };
 
@@ -37,12 +34,12 @@ impl Default for MirrorConfig {
     #[inline(always)]
     fn default() -> Self {
         MirrorConfig {
-            use_humidity: false,
+            use_humidity: true,
             display_host_ip: true,
-            display_sleep_timer: false,
-            display_debug_panel: false,
+            display_sleep_timer: true,
+            display_debug_panel: true,
             sleep_timeout_sec: 10,
-            screen_max_frame_rate: 0.033,
+            screen_max_frame_rate: 30.0,
             ambient_temp_delay: 2,
         }
     }
@@ -63,26 +60,47 @@ fn config() -> Json<MirrorConfig> {
     Json(config)
 }
 
-#[post("/config", data = "<config>")]
+#[post("/config", format = "application/json", data = "<config>")]
 fn submit(config: Json<MirrorConfig>) -> Result<(), io::Error> {
-    let mut file = File::create(&*CONFIG_FILE)?;
-    config.into_inner().to_writer_pretty(&mut file)?;
+    //let mut file = File::create(&*CONFIG_FILE)?;
+    let mut file = OpenOptions::new().write(true).open(&*CONFIG_FILE)?;
 
+    config.into_inner().to_writer_pretty(&mut file)?;
+    let _ = file.sync_all()?;
     Ok(())
 }
 
 #[delete("/config")]
 fn reset() -> Result<Json<MirrorConfig>, io::Error> {
-    let mut file = File::create(&*CONFIG_FILE)?;
+    //let mut file = File::create(&*CONFIG_FILE)?;
+
+    let mut file = OpenOptions::new().write(true).open(&*CONFIG_FILE)?;
     let default_config = MirrorConfig::default();
     default_config.to_writer_pretty(&mut file)?;
 
+    let _ = file.sync_all()?;
     Ok(Json(default_config))
+}
+
+#[get("/")]
+fn index() -> io::Result<NamedFile> {
+    NamedFile::open("/home/ghost/smart_mirror/static/index.html")
+}
+
+#[catch(404)]
+fn not_found(req: &Request) -> String {
+    format!("I couldn't find '{}'. Try something else?", req.uri())
+}
+
+#[catch(500)]
+fn internal_error() -> &'static str {
+    "Whoops! Looks like we messed up."
 }
 
 fn main() {
     rocket::ignite()
-        .mount("/", StaticFiles::from("static"))
+        .register(catchers![internal_error, not_found])
+        .mount("/", routes![index])
         .mount("/api", routes![config, submit, reset])
         .attach(cors::make_cors())
         .launch();
