@@ -85,6 +85,16 @@ def raw_to_8bit(data):
     return cv2.cvtColor(np.uint8(data), cv2.COLOR_GRAY2RGB)
 
 
+def applyColorScheme(img, color_scheme):
+    COLOR_PALETS = {
+        "BLUE_RED": [],
+        "BLACK_WHITE": [],
+        "IRON": [],
+    }
+
+    return img
+
+
 def display_temperature(img, val_k, loc, color):
     val = ktoc(val_k)
     cv2.putText(img, "{0:.1f} degC".format(val), loc, cv2.FONT_HERSHEY_DUPLEX, 0.75, color, 2)
@@ -362,6 +372,8 @@ def get_debug_panel(parent):
 #     panel.create_image(0, 0, image=photo, anchor=tk.NW)
 
 
+
+
 if __name__ == '__main__':
     ctx = Context()
 
@@ -425,6 +437,9 @@ if __name__ == '__main__':
                                 data = cv2.resize(data[:, :], (640, 480))
                                 minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
                                 img = raw_to_8bit(data)
+
+                                img = applyColorScheme(img, "BLUE_RED")
+
                                 display_temperature(img, minVal, minLoc, (0, 0, 255))
                                 display_temperature(img, maxVal, maxLoc, (255, 0, 0))
 
