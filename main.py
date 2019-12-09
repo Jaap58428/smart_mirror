@@ -85,12 +85,24 @@ def raw_to_8bit(data):
     return cv2.cvtColor(np.uint8(data), cv2.COLOR_GRAY2RGB)
 
 
+def getBGR(_val):
+    pass
+
+
 def applyColorScheme(img, color_scheme):
     COLOR_PALETS = {
         "BLUE_RED": [],
         "BLACK_WHITE": [],
         "IRON": [],
     }
+
+    minVal, maxVal
+    cv2.minMaxLoc(img, minVal, maxVal)
+
+    # HSV range from 0(red)to 240(blue)
+    a = 240 / (maxVal - minVal)
+
+    print(img)
 
     return img
 
@@ -365,15 +377,6 @@ def get_debug_panel(parent):
     return updated_debug_panel, string_pointers
 
 
-# def update_heat_panel(panel, img):
-#     # Use PIL (Pillow) to convert the NumPy ndarray to a PhotoImage
-#     im = Image.fromarray(img)
-#     photo = ImageTk.PhotoImage(image=im)
-#     panel.create_image(0, 0, image=photo, anchor=tk.NW)
-
-
-
-
 if __name__ == '__main__':
     ctx = Context()
 
@@ -440,8 +443,8 @@ if __name__ == '__main__':
 
                                 img = applyColorScheme(img, "BLUE_RED")
 
-                                display_temperature(img, minVal, minLoc, (0, 0, 255))
-                                display_temperature(img, maxVal, maxLoc, (255, 0, 0))
+                                display_temperature(img, minVal, minLoc, (255, 255, 255))
+                                display_temperature(img, maxVal, maxLoc, (255, 255, 255))
 
                                 cv_img = Image.fromarray(img)
                                 tk_img = ImageTk.PhotoImage(cv_img)
