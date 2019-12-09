@@ -471,7 +471,8 @@ if __name__ == '__main__':
                                 minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
                                 img = raw_to_8bit(data)
 
-                                img = applyColorScheme(img, "BLUE_RED")
+                                # https://docs.opencv.org/master/d3/d50/group__imgproc__colormap.html
+                                img = cv2.applyColorMap(img, cv2.COLORMAP_HOT)
 
                                 display_temperature(img, minVal, minLoc, (255, 255, 255))
                                 display_temperature(img, maxVal, maxLoc, (255, 255, 255))
