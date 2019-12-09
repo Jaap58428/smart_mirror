@@ -196,10 +196,10 @@ class Stream():
         libuvc.uvc_stop_streaming(self.context.handle)
 
 class SignalHandler():
-    def __init__(self, ctx, uvc, device, stream):
-        self.uvc = uvc
-        self.device = device
-        self.stream = stream
+    def __init__(self, ctx, dev, devh):
+        self.ctx = ctx
+        self.dev = dev
+        self.devh = devh
 
         signal.signal(signal.SIGINT, self.exitgracefully)
         signal.signal(signal.SIGTERM, self.exitgracefully)
@@ -208,11 +208,11 @@ class SignalHandler():
         print("[*] CALLED EXITGRACEFULLY [*]")
         print("[*] THING1: {} [*]".format(thing1))
         print("[*] THING2: {} [*]".format(thing2))
-        self.stream.__exit__()
-        self.device.__exit__()
-        self.uvc.__exit__()
-        raise(SystemExit)
+        libuvc.uvc_stop_streaming(self.devh)
+        libuvc.uvc_unref_device(self.dev)
+        libuvc.uvc_exit(self.ctx)
 
+        raise(SystemExit)
 
 class Color(Enum):
     BACKGROUND = "#000"
@@ -415,70 +415,70 @@ if __name__ == '__main__':
    #         with devi.stream() as s:
    #             signal_handler = SignalHandler(ctx, uvc, devi, s)
 
-   ctx = POINTER(uvc_context)()
-   dev = POINTER(uvc_device)()
-   devh = POINTER(uvc_device_handle)()
-   ctrl = uvc_stream_ctrl()
+    ctx = POINTER(uvc_context)()
+    dev = POINTER(uvc_device)()
+    devh = POINTER(uvc_device_handle)()
+    ctrl = uvc_stream_ctrl()
 
-   res = libuvc.uvc_init(byref(ctx), 0)
-   if res < 0:
-     print("uvc_init error")
-     exit(1)
+    res = libuvc.uvc_init(byref(ctx), 0)
+    if res < 0:
+        print("uvc_init error")
+        exit(1)
 
-   try:
-     res = libuvc.uvc_find_device(ctx, byref(dev), PT_USB_VID, PT_USB_PID, 0)
-     if res < 0:
-       print("uvc_find_device error")
-       exit(1)
+    try:
+        res = libuvc.uvc_find_device(ctx, byref(dev), PT_USB_VID, PT_USB_PID, 0)
+        if res < 0:
+            print("uvc_find_device error")
+            exit(1)
 
-     try:
-       res = libuvc.uvc_open(dev, byref(devh))
-       if res < 0:
-         print("uvc_open error")
-         exit(1)
+        try:
+            res = libuvc.uvc_open(dev, byref(devh))
+            if res < 0:
+            print("uvc_open error")
+            exit(1)
 
-       print("device opened!")
+            print("device opened!")
 
-       print_device_info(devh)
-       print_device_formats(devh)
+            print_device_info(devh)
+            print_device_formats(devh)
 
-       frame_formats = uvc_get_frame_formats_by_guid(devh, VS_FMT_GUID_Y16)
-       if len(frame_formats) == 0:
-         print("device does not support Y16")
-         exit(1)
+            frame_formats = uvc_get_frame_formats_by_guid(devh, VS_FMT_GUID_Y16)
+            if len(frame_formats) == 0:
+                print("device does not support Y16")
+                exit(1)
 
-       libuvc.uvc_get_stream_ctrl_format_size(devh, byref(ctrl), UVC_FRAME_FORMAT_Y16,
-         frame_formats[0].wWidth, frame_formats[0].wHeight, int(1e7 / frame_formats[0].dwDefaultFrameInterval)
-       )
+            libuvc.uvc_get_stream_ctrl_format_size(devh, byref(ctrl), UVC_FRAME_FORMAT_Y16,
+                frame_formats[0].wWidth, frame_formats[0].wHeight, int(1e7 / frame_formats[0].dwDefaultFrameInterval)
+            )
 
-       res = libuvc.uvc_start_streaming(devh, byref(ctrl), PTR_PY_FRAME_CALLBACK, None, 0)
-       if res < 0:
-         print("uvc_start_streaming failed: {0}".format(res))
-         exit(1)
+            res = libuvc.uvc_start_streaming(devh, byref(ctrl), PTR_PY_FRAME_CALLBACK, None, 0)
+            if res < 0:
+                print("uvc_start_streaming failed: {0}".format(res))
+                exit(1)
 
-         with Board() as _, MotionSense(7) as motion_sensor, TempSense(17) as ambient_temp_sensor:
+            with Board() as _, MotionSense(7) as motion_sensor, TempSense(17) as ambient_temp_sensor:
 
-                    last_ambient_temp_req_time = 0
-                    data_set = 0
-                    data_set, last_ambient_temp_req_time = get_ambient_temp_data(
-                        ambient_temp_sensor,
-                        last_ambient_temp_req_time,
-                        data_set
-                    )  # return dict for display
+                last_ambient_temp_req_time = 0
+                data_set = 0
+                data_set, last_ambient_temp_req_time = get_ambient_temp_data(
+                    ambient_temp_sensor,
+                    last_ambient_temp_req_time,
+                    data_set
+                )  # return dict for display
 
-                    window = get_main_window()
+                window = get_main_window()
 
-                    heat_image_panel = get_heat_image_panel(window)
-                    data_panel, data_string_pointers = get_data_panel(window, data_set)
+                heat_image_panel = get_heat_image_panel(window)
+                data_panel, data_string_pointers = get_data_panel(window, data_set)
 
-                    panels = [
-                        heat_image_panel,
-                        data_panel
-                    ]
+                panels = [
+                    heat_image_panel,
+                    data_panel
+                ]
 
-                    if settings["display_debug_panel"]:
-                        debug_panel, debug_string_pointers = get_debug_panel(window)
-                        panels.append(debug_panel)
+                if settings["display_debug_panel"]:
+                    debug_panel, debug_string_pointers = get_debug_panel(window)
+                    panels.append(debug_panel)
 
                     is_gui_shown = True
 
@@ -551,16 +551,15 @@ if __name__ == '__main__':
                         cv2.destroyAllWindows()
                     except Exception as e:
                         print("[*] EXCEPTION OCCURED [*]")
-                        print(e)i
-
+                        print(e)
 
                     finally:
-        libuvc.uvc_stop_streaming(devh)
+                        libuvc.uvc_stop_streaming(devh)
 
       print("done")
+        finally:
+            libuvc.uvc_unref_device(dev)
     finally:
-      libuvc.uvc_unref_device(dev)
-  finally:
-    libuvc.uvc_exit(ctx)
+        libuvc.uvc_exit(ctx)
 
 
