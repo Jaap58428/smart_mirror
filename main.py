@@ -4,6 +4,7 @@
 import tkinter as tk
 import random
 import socket
+import signal
 from enum import Enum
 import os
 import json
@@ -43,7 +44,7 @@ LABEL_STRINGS = {
     "hum": "Ambient humidity",
 }
 
-BUF_SIZE = 10
+BUF_SIZE = 100
 q = Queue(BUF_SIZE)
 
 
@@ -205,6 +206,24 @@ class Stream():
 
     def __exit__(self, *args):
         libuvc.uvc_stop_streaming(self.context.handle)
+
+class SignalHandler():
+    def __init__(self, ctx, uvc, device, stream):
+        self.uvc = uvc
+        self.device = device
+        self.stream = stream
+
+        signal.signal(signal.SIGINT, self.exitgracefully)
+        signal.signal(signal.SIGTERM, self.exitgracefully)
+    
+    def exitgracefully(self, thing1, thing2):
+        print("[*] CALLED EXITGRACEFULLY [*]")
+        print("[*] THING1: {} [*]".format(thing1))
+        print("[*] THING2: {} [*]".format(thing2))
+        self.stream.__exit__()
+        self.device.__exit__()
+        self.uvc.__exit__()
+        raise(SystemExit)
 
 
 class Color(Enum):
@@ -397,6 +416,7 @@ if __name__ == '__main__':
                                                    )
 
             with devi.stream() as s:
+                signal_handler = SignalHandler(ctx, uvc, devi, s)
                 with Board() as _, MotionSense(7) as motion_sensor, TempSense(17) as ambient_temp_sensor:
 
                     last_ambient_temp_req_time = 0
@@ -427,13 +447,18 @@ if __name__ == '__main__':
                     start_time = time.time()
 
                     try:
+                        data = None
                         while True:
                             # If timer hasn't passed into sleep: ACTIVE
                             time_passed = time.time() - start_time
                             if time_passed < settings["sleep_timeout_sec"]:
 
                                 # GET IMAGE FROM CAMERA
-                                data = q.get(True, 500)
+                                try:
+                                    data = q.get(False, 500)
+                                except Exception as e:
+                                    print("[*] NO DATA [*]")
+                                    pass
                                 if data is None:
                                     print("[*] DATA WAS NOONE [*]")
                                     break
@@ -453,7 +478,7 @@ if __name__ == '__main__':
                                 )
                                 heat_image_panel.image = tk_img
 
-                                cv2.waitKey(1)
+                                #cv2.waitKey(1)
 
                                 # Update data panel
                                 data_set, last_ambient_temp_req_time = get_ambient_temp_data(
