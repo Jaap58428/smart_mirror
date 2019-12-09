@@ -18,18 +18,12 @@ import numpy as np
 from pathlib import Path  # python3 only
 from dotenv import load_dotenv
 
+# SETUP SETTINGS
 env_path = Path('/home/pi/rocket') / '.env'
 load_dotenv(dotenv_path=env_path)
 config_path = os.getenv("CONFIG_FILE")
-print(config_path)
 with open('/home/ghost/smart_mirror/rocket/' + config_path, "r") as f:
     settings = json.load(f)
-
-try:
-    from queue import Queue
-except ImportError:
-    from Queue import Queue
-import platform
 
 if os.name == 'nt':
     from sensor import MotionSenseMock as MotionSense
@@ -45,33 +39,6 @@ LABEL_STRINGS = {
     "hum": "Ambient humidity",
 }
 
-BUF_SIZE = 100
-q = Queue(BUF_SIZE)
-
-
-def py_frame_callback(frame, userptr):
-    array_pointer = cast(frame.contents.data, POINTER(c_uint16 * (frame.contents.width * frame.contents.height)))
-    data = np.frombuffer(
-        array_pointer.contents, dtype=np.dtype(np.uint16)
-    ).reshape(
-        frame.contents.height, frame.contents.width
-    )  # no copy
-
-    # data = np.fromiter(
-    #   frame.contents.data, dtype=np.dtype(np.uint8), count=frame.contents.data_bytes
-    # ).reshape(
-    #   frame.contents.height, frame.contents.width, 2
-    # ) # copy
-
-    if frame.contents.data_bytes != (2 * frame.contents.width * frame.contents.height):
-        return
-
-    if not q.full():
-        q.put(data)
-
-
-PTR_PY_FRAME_CALLBACK = CFUNCTYPE(None, POINTER(uvc_frame), c_void_p)(py_frame_callback)
-
 
 def ktof(val):
     return (1.8 * ktoc(val) + 32.0)
@@ -79,16 +46,6 @@ def ktof(val):
 
 def ktoc(val):
     return (val - 27315) / 100.0
-
-
-def raw_to_8bit(data):
-    cv2.normalize(data, data, 0, 65535, cv2.NORM_MINMAX)
-    np.right_shift(data, 8, data)
-    return cv2.cvtColor(np.uint8(data), cv2.COLOR_GRAY2RGB)
-
-
-def getBGR(_val):
-    pass
 
 
 def applyColorScheme(img, color_scheme):
@@ -121,114 +78,23 @@ def display_temperature(img, val_k, loc, color):
     cv2.line(img, (x, y - 2), (x, y + 2), color, 1)
 
 
-class Context():
-    def __init__(self):
-        self.ctx = POINTER(uvc_context)()
-        self.dev = POINTER(uvc_device)()
-        self.handle = POINTER(uvc_device_handle)()
-        self.ctrl = uvc_stream_ctrl()
-
-    def uvc(self):
-        return Uvc(self)
-
-
-class UvcInitError(Exception):
-    pass
-
-
-class DeviceNotFound(Exception):
-    pass
-
-
-class DeviceNotAvailable(Exception):
-    pass
-
-
-class StreamError(Exception):
-    pass
-
-
-class Uvc():
-    def __init__(self, context):
-        self.context = context
-
-    def __enter__(self):
-        res = libuvc.uvc_init(byref(self.context.ctx), 0)
-        if res < 0:
-            raise UvcInitError("Failed to initialize UVC")
-
-        return self
-
-    def __exit__(self, *args):
-        libuvc.uvc_exit(self.context.ctx)
-
-    def find_device(self):
-        res = libuvc.uvc_find_device(self.context.ctx, byref(self.context.dev), PT_USB_VID, PT_USB_PID, 0)
-        if res < 0:
-            raise DeviceNotFound("Could not find UVC device")
-
-        return
-
-    def open(self):
-        self.find_device()
-        return Device(self.context)
-
-
-class Device():
-    def __init__(self, context):
-        self.context = context
-
-    def __enter__(self):
-        res = libuvc.uvc_open(self.context.dev, byref(self.context.handle))
-        if res < 0:
-            raise DeviceNotAvailable("Failed to open device")
-
-        return self
-
-    def __exit__(self, *args):
-        libuvc.uvc_unref_device(self.context.dev)
-
-    def device_info(self):
-        print_device_info(self.context.handle)
-
-    def device_formats(self):
-        print_device_formats(self.context.handle)
-
-    def stream(self):
-        return Stream(self.context)
-
-
-class Stream():
-    def __init__(self, context):
-        self.context = context
-
-    def __enter__(self):
-        res = libuvc.uvc_start_streaming(self.context.handle, byref(self.context.ctrl), PTR_PY_FRAME_CALLBACK, None, 0)
-        if res < 0:
-            raise StreamError("Failed to start stream")
-
-        return self
-
-    def __exit__(self, *args):
-        libuvc.uvc_stop_streaming(self.context.handle)
-
-class SignalHandler():
-    def __init__(self, ctx, uvc, device, stream):
-        self.uvc = uvc
-        self.device = device
-        self.stream = stream
-
-        signal.signal(signal.SIGINT, self.exitgracefully)
-        signal.signal(signal.SIGTERM, self.exitgracefully)
-    
-    def exitgracefully(self, thing1, thing2):
-        print("[*] CALLED EXITGRACEFULLY [*]")
-        print("[*] THING1: {} [*]".format(thing1))
-        print("[*] THING2: {} [*]".format(thing2))
-        self.stream.__exit__()
-        self.device.__exit__()
-        self.uvc.__exit__()
-        raise(SystemExit)
+# class SignalHandler():
+#     def __init__(self, ctx, uvc, device, stream):
+#         self.uvc = uvc
+#         self.device = device
+#         self.stream = stream
+#
+#         signal.signal(signal.SIGINT, self.exitgracefully)
+#         signal.signal(signal.SIGTERM, self.exitgracefully)
+#
+#     def exitgracefully(self, thing1, thing2):
+#         print("[*] CALLED EXITGRACEFULLY [*]")
+#         print("[*] THING1: {} [*]".format(thing1))
+#         print("[*] THING2: {} [*]".format(thing2))
+#         self.stream.__exit__()
+#         self.device.__exit__()
+#         self.uvc.__exit__()
+#         raise(SystemExit)
 
 
 class Color(Enum):
@@ -260,7 +126,7 @@ def get_ip_address():
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
         ip_address = s.getsockname()[0]
-    except e:
+    except Exception as e:
         print(e)
     finally:
         s.close()
@@ -400,11 +266,13 @@ def get_debug_panel(parent):
     return updated_debug_panel, string_pointers
 
 
-def editImageData(data):
-    data  = cv2.resize(data[:, :], (640, 480))
+def editImageData(frame):
+    frame = cv2.resize(frame[:, :], (640, 480))
 
-    minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
-    img = raw_to_8bit(data)
+    minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(frame)
+    cv2.normalize(frame, frame, 0, 65535, cv2.NORM_MINMAX)
+    np.right_shift(frame, 8, frame)
+    img = cv2.cvtColor(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), cv2.COLOR_GRAY2RGB)
 
     # https://docs.opencv.org/master/d3/d50/group__imgproc__colormap.html
     img = cv2.applyColorMap(img, cv2.COLORMAP_HOT)
@@ -415,111 +283,103 @@ def editImageData(data):
     return Image.fromarray(ImageTk.PhotoImage(img))
 
 
+def get_stream():
+    # capture from the LAST camera in the system
+    # presumably, if the system has a built-in webcam it will be the first
+    for i in reversed(range(10)):
+        cv2_cap = cv2.VideoCapture(i)
+        if cv2_cap.isOpened():
+            break
+
+    if not cv2_cap.isOpened():
+        print("Camera not found!")
+        exit(1)
+
+    return cv2_cap
+
+
 if __name__ == '__main__':
-    ctx = Context()
+    with Board() as _, MotionSense(7) as motion_sensor, TempSense(17) as ambient_temp_sensor:
+        # Open thermal camera stream
+        cv2_stream = get_stream()
 
-    with ctx.uvc() as uvc:
-        with uvc.open() as devi:
+        # SETUP AMBIENT TEMP SENSOR
+        last_ambient_temp_req_time = 0
+        data_set = 0
+        data_set, last_ambient_temp_req_time = get_ambient_temp_data(
+            ambient_temp_sensor,
+            last_ambient_temp_req_time,
+            data_set
+        )  # return dict for display
 
-            devi.device_info()
-            devi.device_formats()
+        # GET ROOT WINDOW
+        window = get_main_window()
 
-            frame_formats = uvc_get_frame_formats_by_guid(devi.context.handle, VS_FMT_GUID_Y16)
-            if len(frame_formats) == 0:
-                print("device does not support Y16")
-                exit(1)
+        # SETUP VIDEO STREAM AND DATA PANELS
+        heat_image_panel = get_heat_image_panel(window)
+        data_panel, data_string_pointers = get_data_panel(window, data_set)
 
-            libuvc.uvc_get_stream_ctrl_format_size(devi.context.handle, byref(devi.context.ctrl), UVC_FRAME_FORMAT_Y16,
-                                                   frame_formats[0].wWidth, frame_formats[0].wHeight,
-                                                   int(1e7 / frame_formats[0].dwDefaultFrameInterval)
-                                                   )
+        panels = [
+            heat_image_panel,
+            data_panel
+        ]
 
-            with devi.stream() as s:
-                signal_handler = SignalHandler(ctx, uvc, devi, s)
-                with Board() as _, MotionSense(7) as motion_sensor, TempSense(17) as ambient_temp_sensor:
+        # SETUP DEBUG PANEL
+        if settings["display_debug_panel"]:
+            debug_panel, debug_string_pointers = get_debug_panel(window)
+            panels.append(debug_panel)
 
-                    last_ambient_temp_req_time = 0
-                    data_set = 0
-                    data_set, last_ambient_temp_req_time = get_ambient_temp_data(
-                        ambient_temp_sensor,
-                        last_ambient_temp_req_time,
-                        data_set
-                    )  # return dict for display
+        is_gui_shown = True
 
-                    window = get_main_window()
+        # At boot set start time
+        start_time = time.time()
 
-                    heat_image_panel = get_heat_image_panel(window)
-                    data_panel, data_string_pointers = get_data_panel(window, data_set)
+        while True:
+            # If timer hasn't passed into sleep: ACTIVE
+            time_passed = time.time() - start_time
+            if time_passed < settings["sleep_timeout_sec"]:
 
-                    panels = [
-                        heat_image_panel,
-                        data_panel
-                    ]
+                # GET IMAGE FROM CAMERA
+                cv2_stream.grab()
+                read_flag, frame = cv2_stream.retrieve(0)
 
-                    if settings["display_debug_panel"]:
-                        debug_panel, debug_string_pointers = get_debug_panel(window)
-                        panels.append(debug_panel)
+                # Update heat image panel
+                img = editImageData(frame)
+                heat_image_panel.configure(
+                    image=img
+                )
+                heat_image_panel.image = img
 
-                    is_gui_shown = True
+                # Update data panel
+                data_set, last_ambient_temp_req_time = get_ambient_temp_data(
+                    ambient_temp_sensor,
+                    last_ambient_temp_req_time,
+                    data_set
+                )
+                update_string_pointers(data_string_pointers, data_set)
 
-                    # At boot set start time
+                # Update timer
+                if settings["display_debug_panel"] and settings["display_sleep_timer"]:
+                    time_str = round(time_passed, 1)
+                    timer_str = "Timer: {0} ({1})".format(str(time_str), settings["sleep_timeout_sec"])
+                    debug_string_pointers["display_sleep_timer"].set(timer_str)
+
+                if movement(motion_sensor):
                     start_time = time.time()
 
-                    try:
-                        data = None
-                        while True:
-                            # If timer hasn't passed into sleep: ACTIVE
-                            time_passed = time.time() - start_time
-                            if time_passed < settings["sleep_timeout_sec"]:
+            # Else fall into PASSIVE, check for movement
+            else:
+                kill_gui(panels) if is_gui_shown else False
+                # Once movement is detected, show GUI and reset timer
+                if movement(motion_sensor):
+                    show_gui(panels)
+                    start_time = time.time()
 
-                                # GET IMAGE FROM CAMERA
-                                try:
-                                    data = q.get(False, 500)
-                                except Exception as e:
-                                    print("[*] NO DATA [*]")
-                                    pass
-                                if data is None:
-                                    print("[*] DATA WAS NOONE [*]")
-                                    break
+            window.update_idletasks()
+            window.update()
 
-                                # Update heat image panel
-                                img = editImageData(data)
-                                heat_image_panel.configure(
-                                    image=img
-                                )
-                                heat_image_panel.image = img
+            # FPS = how many frames fit in one seconds, so 1 sec / FPS to sleep
+            time.sleep((1 / settings.get("screen_max_frame_rate", 1)))
+    cv2_stream.release()
+    cv2.destroyAllWindows()
 
-                                # Update data panel
-                                data_set, last_ambient_temp_req_time = get_ambient_temp_data(
-                                    ambient_temp_sensor,
-                                    last_ambient_temp_req_time,
-                                    data_set
-                                )
-                                update_string_pointers(data_string_pointers, data_set)
-
-                                # Update timer
-                                if settings["display_debug_panel"] and settings["display_sleep_timer"]:
-                                    time_str = round(time_passed, 1)
-                                    timer_str = "Timer: {0} ({1})".format(str(time_str), settings["sleep_timeout_sec"])
-                                    debug_string_pointers["display_sleep_timer"].set(timer_str)
-
-                                if movement(motion_sensor):
-                                    start_time = time.time()
-
-                            # Else fall into PASSIVE, check for movement
-                            else:
-                                kill_gui(panels) if is_gui_shown else False
-                                # Once movement is detected, show GUI and reset timer
-                                if movement(motion_sensor):
-                                    show_gui(panels)
-                                    start_time = time.time()
-
-                            window.update_idletasks()
-                            window.update()
-
-                            # FPS = how many frames fit in one seconds, so 1 sec / FPS to sleep
-                            time.sleep((1 / settings.get("screen_max_frame_rate", 1)))
-                        cv2.destroyAllWindows()
-                    except Exception as e:
-                        print("[*] EXCEPTION OCCURED [*]")
-                        print(e)
