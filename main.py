@@ -394,27 +394,69 @@ def get_debug_panel(parent):
 
 
 if __name__ == '__main__':
-    ctx = Context()
+   # ctx = Context()
 
-    with ctx.uvc() as uvc:
-        with uvc.open() as devi:
+   # with ctx.uvc() as uvc:
+   #     with uvc.open() as devi:
+   # 
+   #         devi.device_info()
+   #         devi.device_formats()
 
-            devi.device_info()
-            devi.device_formats()
+   #         frame_formats = uvc_get_frame_formats_by_guid(devi.context.handle, VS_FMT_GUID_Y16)
+   #         if len(frame_formats) == 0:
+   #             print("device does not support Y16")
+   #             exit(1)
 
-            frame_formats = uvc_get_frame_formats_by_guid(devi.context.handle, VS_FMT_GUID_Y16)
-            if len(frame_formats) == 0:
-                print("device does not support Y16")
-                exit(1)
+   #         libuvc.uvc_get_stream_ctrl_format_size(devi.context.handle, byref(devi.context.ctrl), UVC_FRAME_FORMAT_Y16,
+   #                                                frame_formats[0].wWidth, frame_formats[0].wHeight,
+   #                                                int(1e7 / frame_formats[0].dwDefaultFrameInterval)
+   #                                                )
 
-            libuvc.uvc_get_stream_ctrl_format_size(devi.context.handle, byref(devi.context.ctrl), UVC_FRAME_FORMAT_Y16,
-                                                   frame_formats[0].wWidth, frame_formats[0].wHeight,
-                                                   int(1e7 / frame_formats[0].dwDefaultFrameInterval)
-                                                   )
+   #         with devi.stream() as s:
+   #             signal_handler = SignalHandler(ctx, uvc, devi, s)
 
-            with devi.stream() as s:
-                signal_handler = SignalHandler(ctx, uvc, devi, s)
-                with Board() as _, MotionSense(7) as motion_sensor, TempSense(17) as ambient_temp_sensor:
+   ctx = POINTER(uvc_context)()
+   dev = POINTER(uvc_device)()
+   devh = POINTER(uvc_device_handle)()
+   ctrl = uvc_stream_ctrl()
+
+   res = libuvc.uvc_init(byref(ctx), 0)
+   if res < 0:
+     print("uvc_init error")
+     exit(1)
+
+   try:
+     res = libuvc.uvc_find_device(ctx, byref(dev), PT_USB_VID, PT_USB_PID, 0)
+     if res < 0:
+       print("uvc_find_device error")
+       exit(1)
+
+     try:
+       res = libuvc.uvc_open(dev, byref(devh))
+       if res < 0:
+         print("uvc_open error")
+         exit(1)
+
+       print("device opened!")
+
+       print_device_info(devh)
+       print_device_formats(devh)
+
+       frame_formats = uvc_get_frame_formats_by_guid(devh, VS_FMT_GUID_Y16)
+       if len(frame_formats) == 0:
+         print("device does not support Y16")
+         exit(1)
+
+       libuvc.uvc_get_stream_ctrl_format_size(devh, byref(ctrl), UVC_FRAME_FORMAT_Y16,
+         frame_formats[0].wWidth, frame_formats[0].wHeight, int(1e7 / frame_formats[0].dwDefaultFrameInterval)
+       )
+
+       res = libuvc.uvc_start_streaming(devh, byref(ctrl), PTR_PY_FRAME_CALLBACK, None, 0)
+       if res < 0:
+         print("uvc_start_streaming failed: {0}".format(res))
+         exit(1)
+
+         with Board() as _, MotionSense(7) as motion_sensor, TempSense(17) as ambient_temp_sensor:
 
                     last_ambient_temp_req_time = 0
                     data_set = 0
@@ -509,4 +551,16 @@ if __name__ == '__main__':
                         cv2.destroyAllWindows()
                     except Exception as e:
                         print("[*] EXCEPTION OCCURED [*]")
-                        print(e)
+                        print(e)i
+
+
+                    finally:
+        libuvc.uvc_stop_streaming(devh)
+
+      print("done")
+    finally:
+      libuvc.uvc_unref_device(dev)
+  finally:
+    libuvc.uvc_exit(ctx)
+
+
