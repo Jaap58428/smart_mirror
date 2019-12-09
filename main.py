@@ -267,7 +267,6 @@ def get_ip_address():
         return ip_address
 
 
-# CANVAS VERSION
 def get_heat_image_panel(parent):
     heat_image_panel = tk.Label(
         parent,
@@ -401,6 +400,21 @@ def get_debug_panel(parent):
     return updated_debug_panel, string_pointers
 
 
+def editImageData(data):
+    data  = cv2.resize(data[:, :], (640, 480))
+
+    minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
+    img = raw_to_8bit(data)
+
+    # https://docs.opencv.org/master/d3/d50/group__imgproc__colormap.html
+    img = cv2.applyColorMap(img, cv2.COLORMAP_HOT)
+
+    display_temperature(img, minVal, minLoc, (255, 255, 255))
+    display_temperature(img, maxVal, maxLoc, (255, 255, 255))
+
+    return Image.fromarray(ImageTk.PhotoImage(img))
+
+
 if __name__ == '__main__':
     ctx = Context()
 
@@ -467,24 +481,13 @@ if __name__ == '__main__':
                                 if data is None:
                                     print("[*] DATA WAS NOONE [*]")
                                     break
-                                data = cv2.resize(data[:, :], (640, 480))
-                                minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
-                                img = raw_to_8bit(data)
 
-                                # https://docs.opencv.org/master/d3/d50/group__imgproc__colormap.html
-                                img = cv2.applyColorMap(img, cv2.COLORMAP_HOT)
-
-                                display_temperature(img, minVal, minLoc, (255, 255, 255))
-                                display_temperature(img, maxVal, maxLoc, (255, 255, 255))
-
-                                cv_img = Image.fromarray(img)
-                                tk_img = ImageTk.PhotoImage(cv_img)
+                                # Update heat image panel
+                                img = editImageData(data)
                                 heat_image_panel.configure(
-                                    image=tk_img
+                                    image=img
                                 )
-                                heat_image_panel.image = tk_img
-
-                                #cv2.waitKey(1)
+                                heat_image_panel.image = img
 
                                 # Update data panel
                                 data_set, last_ambient_temp_req_time = get_ambient_temp_data(
@@ -494,6 +497,7 @@ if __name__ == '__main__':
                                 )
                                 update_string_pointers(data_string_pointers, data_set)
 
+                                # Update timer
                                 if settings["display_debug_panel"] and settings["display_sleep_timer"]:
                                     time_str = round(time_passed, 1)
                                     timer_str = "Timer: {0} ({1})".format(str(time_str), settings["sleep_timeout_sec"])
