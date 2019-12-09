@@ -7,6 +7,7 @@ import socket
 import signal
 from enum import Enum
 import os
+import colorsys
 import json
 from PIL import Image
 from PIL import ImageTk
@@ -91,19 +92,23 @@ def getBGR(_val):
 
 
 def applyColorScheme(img, color_scheme):
+    color_scheme = "BLUE_RED" if color_scheme is None else False
     COLOR_PALETS = {
-        "BLUE_RED": [],
-        "BLACK_WHITE": [],
-        "IRON": [],
+        "BLUE_RED": (120, 180),  # blue to red
+        "RAINBOW": (0, 180),  # full spectrum
+        "TOXIC": (30, 60)  # yellow to green
     }
 
-    minVal, maxVal
-    cv2.minMaxLoc(img, minVal, maxVal)
+    for column in img:
+        for (i, pixel) in enumerate(column):
+            # gives between 0 and 255
+            temp_ratio = pixel.split()[0] / 255.0  # or 0 or 1, equal values
 
-    # HSV range from 0(red)to 240(blue)
-    a = 240 / (maxVal - minVal)
+            low_end, high_end = COLOR_PALETS[color_scheme]
+            hue = low_end + (temp_ratio * (high_end - low_end))
 
-    print(img)
+            r, g, b = colorsys.hls_to_rgb(hue, 255, 255)
+            column[i] = " ".join([r, g, b])
 
     return img
 
