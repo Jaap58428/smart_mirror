@@ -434,8 +434,8 @@ if __name__ == '__main__':
         try:
             res = libuvc.uvc_open(dev, byref(devh))
             if res < 0:
-            print("uvc_open error")
-            exit(1)
+                print("uvc_open error")
+                exit(1)
 
             print("device opened!")
 
@@ -455,7 +455,7 @@ if __name__ == '__main__':
             if res < 0:
                 print("uvc_start_streaming failed: {0}".format(res))
                 exit(1)
-
+            handler = SignalHandler(ctx, dev, devh)
             with Board() as _, MotionSense(7) as motion_sensor, TempSense(17) as ambient_temp_sensor:
 
                 last_ambient_temp_req_time = 0
@@ -497,27 +497,26 @@ if __name__ == '__main__':
                                     data = q.get(False, 500)
                                 except Exception as e:
                                     print("[*] NO DATA [*]")
-                                    pass
                                 if data is None:
                                     print("[*] DATA WAS NOONE [*]")
-                                    break
-                                data = cv2.resize(data[:, :], (640, 480))
-                                minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
-                                img = raw_to_8bit(data)
+                                else:
+                                    data = cv2.resize(data[:, :], (640, 480))
+                                    minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
+                                    img = raw_to_8bit(data)
 
-                                img = applyColorScheme(img, "BLUE_RED")
+                                    img = applyColorScheme(img, "BLUE_RED")
 
-                                display_temperature(img, minVal, minLoc, (0, 0, 255))
-                                display_temperature(img, maxVal, maxLoc, (255, 0, 0))
+                                    display_temperature(img, minVal, minLoc, (0, 0, 255))
+                                    display_temperature(img, maxVal, maxLoc, (255, 0, 0))
 
-                                cv_img = Image.fromarray(img)
-                                tk_img = ImageTk.PhotoImage(cv_img)
-                                heat_image_panel.configure(
-                                    image=tk_img
-                                )
-                                heat_image_panel.image = tk_img
+                                    cv_img = Image.fromarray(img)
+                                    tk_img = ImageTk.PhotoImage(cv_img)
+                                    heat_image_panel.configure(
+                                        image=tk_img
+                                    )
+                                    heat_image_panel.image = tk_img
 
-                                #cv2.waitKey(1)
+                                    #cv2.waitKey(1)
 
                                 # Update data panel
                                 data_set, last_ambient_temp_req_time = get_ambient_temp_data(
@@ -556,7 +555,6 @@ if __name__ == '__main__':
                     finally:
                         libuvc.uvc_stop_streaming(devh)
 
-      print("done")
         finally:
             libuvc.uvc_unref_device(dev)
     finally:
