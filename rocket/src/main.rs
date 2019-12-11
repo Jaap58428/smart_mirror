@@ -8,7 +8,7 @@ use lazy_static::lazy_static;
 use rocket_contrib::json::Json;
 
 use std::{
-    fs::{File, OpenOptions},
+    fs::{File},
     io::{self, Write},
 };
 
@@ -61,20 +61,19 @@ fn config() -> Json<MirrorConfig> {
 }
 
 #[post("/config", format = "application/json", data = "<config>")]
-fn submit(config: Json<MirrorConfig>) -> Result<(), io::Error> {
-    //let mut file = File::create(&*CONFIG_FILE)?;
-    let mut file = OpenOptions::new().write(true).open(&*CONFIG_FILE)?;
+fn submit(config: Json<MirrorConfig>) -> Result<Json<MirrorConfig>, io::Error> {
+    let mut file = File::create(&*CONFIG_FILE)?;
 
-    config.into_inner().to_writer_pretty(&mut file)?;
+    config.to_writer_pretty(&mut file)?;
+    
     let _ = file.sync_all()?;
-    Ok(())
+    Ok(config)
 }
 
 #[delete("/config")]
 fn reset() -> Result<Json<MirrorConfig>, io::Error> {
-    //let mut file = File::create(&*CONFIG_FILE)?;
+    let mut file = File::create(&*CONFIG_FILE)?;
 
-    let mut file = OpenOptions::new().write(true).open(&*CONFIG_FILE)?;
     let default_config = MirrorConfig::default();
     default_config.to_writer_pretty(&mut file)?;
 
