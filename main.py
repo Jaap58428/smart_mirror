@@ -195,7 +195,11 @@ def get_ambient_temp_data(tmpsensor, last_req_time, last_data_set):
 
 def update_string_pointers(string_pointers, data_set):
     for attr, pointer in string_pointers.items():
-        pointer.set('{0}: {1}'.format(attr, data_set[attr]))
+        attr_string = LABEL_STRINGS[attr]
+        pointer.set('{0}: {1}'.format(
+            attr_string,
+            str(data_set[attr]))
+        )
 
 
 def kill_gui(gui_elements):
