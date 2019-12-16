@@ -206,18 +206,18 @@
     }
 
     const getConfig = () => {
-        console.log("Fetching current config...");
-        response = {
-            "use_humidity": false,
-            "display_host_ip": true,
-            "display_sleep_timer": false,
-            "display_debug_panel": false,
-            "sleep_timeout_sec": 10,
-            "screen_max_frame_rate": 0.033,
-            "ambient_temp_delay": 2,
-        }
-        loadResponseToForm(response)
-        // xmlHttpRequest("GET", loadResponseToForm, null, null)
+        //console.log("Fetching current config...");
+        //response = {
+        //    "use_humidity": false,
+        //    "display_host_ip": true,
+        //    "display_sleep_timer": false,
+        //    "display_debug_panel": false,
+        //    "sleep_timeout_sec": 10,
+        //    "screen_max_frame_rate": 0.033,
+        //    "ambient_temp_delay": 2,
+        //}
+        //loadResponseToForm(response)
+        xmlHttpRequest("GET", loadResponseToForm, null, null)
     }
 
     const submitConfig = (clickEvent) => {
@@ -230,23 +230,28 @@
             if (results.hasOwnProperty(result)) {
                 const element = results[result];
                 console.log(element.id, element.value);
-                httpBody[element.id] = element.value
+		    if(element.type == "checkbox"){
+		    	httpBody[element.id] = element.checked
+		    }else {
+			    httpBody[element.id] = Number(element.value)}
             }
         }
 
+
+	console.warn(httpBody)
+	
         xmlHttpRequest(
             "POST",
             loadResponseToForm,
             "New config has been saved",
-            JSON.stringify(httpBody)
-        )
+		JSON.stringify(httpBody))
     }
 
     const resetConfig = (clickEvent) => {
         if (confirm("Are you sure? This will delete your current configuration.")) {
             console.warn("Delete request send.");
             readyMessage = "Config has been reset to DEFAULT values."
-            xmlHttpRequest("GET", loadResponseToForm, readyMessage, null)
+            xmlHttpRequest("DELETE", loadResponseToForm, readyMessage, null)
         } else {
             console.log("Reset cancelled");
         }
@@ -278,14 +283,15 @@
         const url = "/api/config"
         var xhttp = new XMLHttpRequest();
 
-        xhttp.onreadystatechange = () => {
-            if (this.readyState == 4 && this.status == 200) {
-                clearForm()
-                alert(readyMessage)
-                callbackFunction(xhttp.response)
-            }
+        xhttp.onload = () => {
+	    console.warn(xhttp.response)
+            
+            clearForm()
+            alert(readyMessage)
+            callbackFunction(xhttp.response)
         };
         xhttp.open(requestType, url, true);
+	xhttp.setRequestHeader("Content-Type", "application/json")
         clearForm()
         xhttp.send(requestBody);
         loadingNewConfigAnimation()

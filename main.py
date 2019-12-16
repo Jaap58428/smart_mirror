@@ -19,7 +19,8 @@ from dotenv import load_dotenv
 env_path = Path('/home/pi/rocket') / '.env'
 load_dotenv(dotenv_path=env_path)
 config_path = os.getenv("CONFIG_FILE")
-with open(config_path, "r") as f:
+print(config_path)
+with open('/home/ghost/smart_mirror/rocket/' + config_path, "r") as f:
     settings = json.load(f)
 
 # settings = {
@@ -214,12 +215,13 @@ def get_main_window():
 
 
 def get_ip_address():
-    ip_address = ''
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("8.8.8.8", 80))
-    ip_address = s.getsockname()[0]
-    s.close()
-    return ip_address
+   # ip_address = ''
+   # s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+   # s.connect(("8.8.8.8", 80))
+   # ip_address = s.getsockname()[0]
+   # s.close()
+   # return ip_address
+    return 9001
 
 
 # CANVAS VERSION
@@ -285,7 +287,7 @@ def get_data_panel(parent, data_set):
 
 
 def get_ambient_temp_data(tmpsensor, last_req_time, last_data_set):
-    if time.time() - last_req_time > settings["ambient_temp_delay_sec"]:
+    if time.time() - last_req_time > settings["ambient_temp_delay"]:
         (hum, temp) = tmpsensor.sense()
         hum = round(hum, 2)
         temp = round(temp, 2)
@@ -483,7 +485,7 @@ if __name__ == '__main__':
                             window.update()
 
                             # FPS = how many frames fit in one seconds, so 1 sec / FPS to sleep
-                            time.sleep((1 / settings["screen_max_frame_time_sec"]))
+                            time.sleep((1 / settings.get("screen_max_frame_rate", 1)))
                         cv2.destroyAllWindows()
                     except Exception as e:
                         print("[*] EXCEPTION OCCURED [*]")
