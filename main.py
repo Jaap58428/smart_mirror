@@ -38,6 +38,7 @@ else:
 LABEL_STRINGS = {
     "temp": "Ambient temperature",
     "hum": "Ambient humidity",
+    "last_update": "LAST UPDATE"
 }
 
 ambient_sensor_data = {
@@ -154,7 +155,7 @@ def get_heat_image_panel(parent):
 
 def generate_data_labels(parent, data_set):
     string_pointers = {}
-    for attr, val in data_set[:-1].items():
+    for attr, val in data_set.items():
         string_pointers[attr] = tk.StringVar()
         attr_string = LABEL_STRINGS[attr]
         string_pointers[attr].set('{0}: {1}'.format(attr_string, str(val)))
@@ -185,26 +186,36 @@ def get_data_panel(parent, data_set):
 
 
 def read_ambient_temp_sensor(tmpsensor):
-    (hum, temp) = tmpsensor.sense()
-    hum = round(hum, 2)
-    temp = round(temp, 2)
+    global ambient_sensor_data    
+    current = time.time()
 
-    ambient_sensor_data = {"temp": temp, "hum": hum}
+    delay = settings["ambient_temp_delay"]
+    while(True):
+        last_update = ambient_sensor_data["last_update"]
+        
+        if (time.time() - last_update) < delay:
+            continue
 
-    if not settings["use_humidity"]:
-        del ambient_sensor_data["hum"]
+    
+        (hum, temp) = tmpsensor.sense()
+        hum = round(hum, 2)
+        temp = round(temp, 2)
 
-    ambient_sensor_data["last_update"] = time.time()
+        ambient_sensor_data["temp"] = temp
+        
+        if settings["use_humidity"]:
+            ambient_sensor_data["hum"] = hum
 
+        ambient_sensor_data["last_update"] = time.time()
+        
 
 def update_ambient_temp_data(tmpsensor):
-    if time.time() - ambient_sensor_data["last_update"] > settings["ambient_temp_delay"]:
-        update_temp_thread = threading.Thread(
-            target=update_ambient_temp_data,
-            args=(tmpsensor,),
-            daemon=True  # kills thread once main dies
-        )
-        update_temp_thread.start()
+    update_temp_thread = threading.Thread(
+        target=read_ambient_temp_sensor,
+        args=(tmpsensor,),
+        daemon=True  # kills thread once main dies
+    )
+    update_temp_thread.start()
 
 
 def update_string_pointers(string_pointers, data_set):
@@ -285,18 +296,20 @@ def get_debug_panel(parent):
 
 
 def editImageData(frame):
-    frame = cv2.resize(frame[:, :], (640, 480))
-
-    minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(frame)
+    #frame = cv2.resize(frame[:, :], (640, 480))
+    
+    # @NOTE: As of this moment (16-12-2019), we hit an assertion with the {min|max}.
+    # This is a cv2 error.
+    #minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(frame)
     cv2.normalize(frame, frame, 0, 65535, cv2.NORM_MINMAX)
     np.right_shift(frame, 8, frame)
     img = cv2.cvtColor(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), cv2.COLOR_GRAY2RGB)
 
     # https://docs.opencv.org/master/d3/d50/group__imgproc__colormap.html
-    img = cv2.applyColorMap(img, cv2.COLORMAP_HOT)
+    #img = cv2.applyColorMap(img, cv2.COLORMAP_HOT)
 
-    display_temperature(img, minVal, minLoc, (255, 255, 255))
-    display_temperature(img, maxVal, maxLoc, (255, 255, 255))
+    #display_temperature(img, minVal, minLoc, (255, 255, 255))
+    #display_temperature(img, maxVal, maxLoc, (255, 255, 255))
 
     return Image.fromarray(ImageTk.PhotoImage(img))
 
@@ -352,20 +365,20 @@ if __name__ == '__main__':
             time_passed = time.time() - start_time
             if time_passed < settings["sleep_timeout_sec"]:
 
-                # GET IMAGE FROM CAMERA
-                cv2_stream.grab()
-                read_flag, frame = cv2_stream.retrieve(0)
+                ## GET IMAGE FROM CAMERA
+                #cv2_stream.grab()
+                #read_flag, frame = cv2_stream.retrieve(0)
 
                 # Update heat image panel
-                img = editImageData(frame)
-                heat_image_panel.configure(
-                    image=img
-                )
-                heat_image_panel.image = img
+                #img = editImageData(frame)
+                #heat_image_panel.configure(
+                #    image=img
+                #)
+                #heat_image_panel.image = img
 
-                update_ambient_temp_data(ambient_temp_sensor)
+                #update_ambient_temp_data(ambient_temp_sensor)
                 update_string_pointers(data_string_pointers, ambient_sensor_data)
-
+                #print(ambient_sensor_data)
                 # Update timer
                 if settings["display_debug_panel"] and settings["display_sleep_timer"]:
                     time_str = round(time_passed, 1)
@@ -382,12 +395,12 @@ if __name__ == '__main__':
                 if movement(motion_sensor):
                     show_gui(panels)
                     start_time = time.time()
-
             window.update_idletasks()
             window.update()
 
             # FPS = how many frames fit in one seconds, so 1 sec / FPS to sleep
             time.sleep((1 / settings.get("screen_max_frame_rate", 1)))
+            print("show me: ", is_gui_shown)
     cv2_stream.release()
     cv2.destroyAllWindows()
 
