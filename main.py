@@ -19,12 +19,14 @@ from pathlib import Path  # python3 only
 from dotenv import load_dotenv
 import threading
 
+
 # SETUP SETTINGS
 env_path = Path('/home/pi/rocket') / '.env'
 load_dotenv(dotenv_path=env_path)
 config_path = os.getenv("CONFIG_FILE")
 with open('/home/ghost/smart_mirror/rocket/' + config_path, "r") as f:
     settings = json.load(f)
+
 
 if os.name == 'nt':
     from sensor import MotionSenseMock as MotionSense
@@ -35,11 +37,13 @@ else:
     from sensor import TempSense
     from sensor import MotionSense
 
+
 LABEL_STRINGS = {
     "temp": "Ambient temperature",
     "hum": "Ambient humidity",
     "last_update": "LAST UPDATE"
 }
+
 
 ambient_sensor_data = {
     "temp": 0,
@@ -48,34 +52,8 @@ ambient_sensor_data = {
 }
 
 
-def ktof(val):
-    return (1.8 * ktoc(val) + 32.0)
-
-
 def ktoc(val):
     return (val - 27315) / 100.0
-
-
-def applyColorScheme(img, color_scheme):
-    color_scheme = "BLUE_RED" if color_scheme is None else False
-    COLOR_PALETS = {
-        "BLUE_RED": (120, 180),  # blue to red
-        "RAINBOW": (0, 180),  # full spectrum
-        "TOXIC": (30, 60)  # yellow to green
-    }
-
-    for column in img:
-        for (i, pixel) in enumerate(column):
-            # gives between 0 and 255
-            temp_ratio = pixel.split()[0] / 255.0  # or 0 or 1, equal values
-
-            low_end, high_end = COLOR_PALETS[color_scheme]
-            hue = low_end + (temp_ratio * (high_end - low_end))
-
-            r, g, b = colorsys.hls_to_rgb(hue, 255, 255)
-            column[i] = " ".join([r, g, b])
-
-    return img
 
 
 def display_temperature(img, val_k, loc, color):
@@ -86,31 +64,9 @@ def display_temperature(img, val_k, loc, color):
     cv2.line(img, (x, y - 2), (x, y + 2), color, 1)
 
 
-# class SignalHandler():
-#     def __init__(self, ctx, uvc, device, stream):
-#         self.uvc = uvc
-#         self.device = device
-#         self.stream = stream
-#
-#         signal.signal(signal.SIGINT, self.exitgracefully)
-#         signal.signal(signal.SIGTERM, self.exitgracefully)
-#
-#     def exitgracefully(self, thing1, thing2):
-#         print("[*] CALLED EXITGRACEFULLY [*]")
-#         print("[*] THING1: {} [*]".format(thing1))
-#         print("[*] THING2: {} [*]".format(thing2))
-#         self.stream.__exit__()
-#         self.device.__exit__()
-#         self.uvc.__exit__()
-#         raise(SystemExit)
-
-
 class Color(Enum):
     BACKGROUND = "#000"
     FONT_COLOR = "#FFF"
-    HEAT_PANEL = "#F00"
-    DATA_PANEL = "#0F0"
-    DEBUG_PANEL = "#00F"
 
 
 def get_main_window():
@@ -146,8 +102,8 @@ def get_heat_image_panel(parent):
         parent,
         border=0,
         bg=Color.BACKGROUND.value,
-        width=640,
-        height=480,
+        width=0,
+        height=0,
     )
     heat_image_panel.pack(side=tk.TOP, anchor=tk.W)
     return heat_image_panel
@@ -175,7 +131,7 @@ def generate_data_labels(parent, data_set):
 def get_data_panel(parent, data_set):
     data_panel = tk.Frame(parent)
     data_panel.configure(
-        bg=Color.DATA_PANEL.value,
+        bg=Color.BACKGROUND.value,
         height=10,
     )
 
@@ -288,7 +244,7 @@ def generate_debug_labels(parent):
 def get_debug_panel(parent):
     debug_panel = tk.Frame(parent)
     debug_panel.configure(
-        bg=Color.DEBUG_PANEL.value,
+        bg=Color.BACKGROUND.value,
     )
     updated_debug_panel, string_pointers = generate_debug_labels(debug_panel)
     updated_debug_panel.pack(side=tk.BOTTOM, anchor=tk.W)
@@ -400,7 +356,6 @@ if __name__ == '__main__':
 
             # FPS = how many frames fit in one seconds, so 1 sec / FPS to sleep
             time.sleep((1 / settings.get("screen_max_frame_rate", 1)))
-            print("show me: ", is_gui_shown)
     cv2_stream.release()
     cv2.destroyAllWindows()
 
