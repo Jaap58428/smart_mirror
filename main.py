@@ -17,6 +17,7 @@ import cv2
 import numpy as np
 from pathlib import Path  # python3 only
 from dotenv import load_dotenv
+import threading
 
 # SETUP SETTINGS
 env_path = Path('/home/pi/rocket') / '.env'
@@ -37,6 +38,12 @@ else:
 LABEL_STRINGS = {
     "temp": "Ambient temperature",
     "hum": "Ambient humidity",
+}
+
+ambient_sensor_data = {
+    "temp": 0,
+    "hum": 0,
+    "last_update": time.time()
 }
 
 
@@ -147,7 +154,7 @@ def get_heat_image_panel(parent):
 
 def generate_data_labels(parent, data_set):
     string_pointers = {}
-    for attr, val in data_set.items():
+    for attr, val in data_set[:-1].items():
         string_pointers[attr] = tk.StringVar()
         attr_string = LABEL_STRINGS[attr]
         string_pointers[attr].set('{0}: {1}'.format(attr_string, str(val)))
@@ -177,25 +184,36 @@ def get_data_panel(parent, data_set):
     return updated_data_panel, string_pointers
 
 
-def get_ambient_temp_data(tmpsensor, last_req_time, last_data_set):
-    if time.time() - last_req_time > settings["ambient_temp_delay"]:
-        (hum, temp) = tmpsensor.sense()
-        hum = round(hum, 2)
-        temp = round(temp, 2)
+def read_ambient_temp_sensor(tmpsensor):
+    (hum, temp) = tmpsensor.sense()
+    hum = round(hum, 2)
+    temp = round(temp, 2)
 
-        last_data_set = {"temp": temp, "hum": hum}
-        
-        if not settings["use_humidity"]:
-            del last_data_set["use_humidity"] 
+    ambient_sensor_data = {"temp": temp, "hum": hum}
 
-        last_req_time = time.time()
+    if not settings["use_humidity"]:
+        del ambient_sensor_data["hum"]
 
-    return last_data_set, last_req_time
+    ambient_sensor_data["last_update"] = time.time()
+
+
+def update_ambient_temp_data(tmpsensor):
+    if time.time() - ambient_sensor_data["last_update"] > settings["ambient_temp_delay"]:
+        update_temp_thread = threading.Thread(
+            target=update_ambient_temp_data,
+            args=(tmpsensor,),
+            daemon=True  # kills thread once main dies
+        )
+        update_temp_thread.start()
 
 
 def update_string_pointers(string_pointers, data_set):
     for attr, pointer in string_pointers.items():
-        pointer.set('{0}: {1}'.format(attr, data_set[attr]))
+        attr_string = LABEL_STRINGS[attr]
+        pointer.set('{0}: {1}'.format(
+            attr_string,
+            str(data_set[attr]))
+        )
 
 
 def kill_gui(gui_elements):
@@ -305,19 +323,14 @@ if __name__ == '__main__':
 
         # SETUP AMBIENT TEMP SENSOR
         last_ambient_temp_req_time = 0
-        data_set = 0
-        data_set, last_ambient_temp_req_time = get_ambient_temp_data(
-            ambient_temp_sensor,
-            last_ambient_temp_req_time,
-            data_set
-        )  # return dict for display
+        update_ambient_temp_data(ambient_temp_sensor)
 
         # GET ROOT WINDOW
         window = get_main_window()
 
         # SETUP VIDEO STREAM AND DATA PANELS
         heat_image_panel = get_heat_image_panel(window)
-        data_panel, data_string_pointers = get_data_panel(window, data_set)
+        data_panel, data_string_pointers = get_data_panel(window, ambient_sensor_data)
 
         panels = [
             heat_image_panel,
@@ -350,13 +363,8 @@ if __name__ == '__main__':
                 )
                 heat_image_panel.image = img
 
-                # Update data panel
-                data_set, last_ambient_temp_req_time = get_ambient_temp_data(
-                    ambient_temp_sensor,
-                    last_ambient_temp_req_time,
-                    data_set
-                )
-                update_string_pointers(data_string_pointers, data_set)
+                update_ambient_temp_data(ambient_temp_sensor)
+                update_string_pointers(data_string_pointers, ambient_sensor_data)
 
                 # Update timer
                 if settings["display_debug_panel"] and settings["display_sleep_timer"]:
