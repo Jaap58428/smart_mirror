@@ -4,8 +4,11 @@ from queue import Queue
 import platform
 import numpy as np
 import cv2
+import signal
+import sys
+import os
 
-BUF_SIZE = 2
+BUF_SIZE = 2000
 q = Queue(BUF_SIZE)
 
 def py_frame_callback(frame, userptr):
@@ -55,11 +58,14 @@ class StartStreamError(Exception):
 Tries to init uvc with the given arguments.
 Throws a UvcInitError if it fails.
 '''
-def raw_uvc_init(uvc_ctx, usb_ctx):
-    res = libuvc.uvc_init(uvc_ctx, usb_ctx)
+def raw_uvc_init(ctx, usb_ctx):
+    res = libuvc.uvc_init(byref(ctx), usb_ctx)
 
     if res < 0:
         raise UvcInitError("Failed to init raw_uvc_init")
+
+def raw_uvc_exit(ctx):
+    libuvc.uvc_exit(ctx)
 
 '''
 Tries to init uvc with the given arguments.
@@ -73,11 +79,11 @@ def uvc_init(uvc_ctx, usb_ctx):
     try:
         yield
     finally:
-        libuvc.uvc_exit(uvc_ctx)
+        raw_uvc_exit(uvc_ctx)
 
 def raw_uvc_find_device(uvc_ctx, dev, *args):
     # https://ken.tossell.net/libuvc/doc/group__device.html#ga03a47cf340e03fafdca15cfc35620922
-    res = libuvc.find_device(uvc_ctx, dev, *args)
+    res = libuvc.uvc_find_device(uvc_ctx, byref(dev), *args)
 
     if res < 0:
         raise UvcFindDeviceError("Failed to find uvc device")
@@ -89,6 +95,7 @@ def find_uvc_device(uvc_ctx, dev, *args):
     try:
         yield
     finally:
+        # This doesn't really have a destructor.
         pass
 
 def raw_uvc_open(dev, devh):
@@ -97,6 +104,9 @@ def raw_uvc_open(dev, devh):
     if res < 0:
         raise UvcDeviceOpenError("Failed to open uvc device")
 
+def raw_uvc_unref_device(dev): 
+    libuvc.uvc_unref_device(dev)
+
 @contextmanager
 def uvc_open(dev, devh):
     raw_uvc_open(dev, devh)
@@ -104,13 +114,16 @@ def uvc_open(dev, devh):
     try:
         yield
     finally:
-        libuvc.uvc_unref_device(dev)
+        raw_uvc_unref_device(dev)
 
 def raw_uvc_start_streaming(devh, ctrl, *args):
-    res = libuvc.uvc_start_streaming(devh, ctrl, *args)
+    res = libuvc.uvc_start_streaming(devh, byref(ctrl), *args)
 
     if res < 0:
         raise StartStreamError("Couldn't start uvc stream: {}".format(res))
+
+def raw_uvc_stop_streaming(devh):
+    libuvc.uvc_stop_streaming(devh)
 
 @contextmanager
 def start_streaming(devh, ctrl, *args):
@@ -119,7 +132,8 @@ def start_streaming(devh, ctrl, *args):
     try:
         yield
     finally:
-        libuvc.stop_streaming(devh)
+        raw_uvc_stop_streaming(devh)
+
 
 def uvc_get_frame_formats_by_guid_wrapper(devh, *args):
     frame_formats = uvc_get_frame_formats_by_guid(devh, *args)
@@ -129,29 +143,53 @@ def uvc_get_frame_formats_by_guid_wrapper(devh, *args):
 
     return frame_formats
 
+def exitgracefully(ctx, dev, devh):
+    
+    def callme(*args):
+        print("IM SHUTTING DOWN ALL RESOURCES")
+        cv2.destroyAllWindows()
+        raw_uvc_stop_streaming(devh)
+        raw_uvc_unref_device(dev)
+        raw_uvc_exit(ctx)
+
+        # You survived a kill yourself. So do it again.
+        os.subprocess.run(["sudo", "pgrep", "python", "| xargs", "kill"])
+        print("CLEANED UP EVERYTHING")
+        sys.exit(" FOOBAR" / 0)
+        raise SystemExit
+    
+    return callme
+
 def streaming(callme_maybe):
     ctx = POINTER(uvc_context)()
     dev = POINTER(uvc_device)()
     devh = POINTER(uvc_device_handle)()
     ctrl = uvc_stream_ctrl()
+    
+    signal.signal(signal.SIGINT, exitgracefully(ctx, dev, devh))
 
-    with uvc_init(byref(ctx), 0):
-        with find_uvc_device(ctx, byref(dev), PT_USB_VID, PT_USB_PID, 0):
+    with uvc_init(ctx, 0):
+        print("INITTED UVC")
+        with find_uvc_device(ctx, dev, PT_USB_VID, PT_USB_PID, 0):
+            print("FOUND UVC DEVICE")
             with uvc_open(dev, byref(devh)):
+                print("OPENED UVC DEVICE")
                 print_device_info(devh)
                 print_device_formats(devh)
 
                 frame_formats = uvc_get_frame_formats_by_guid_wrapper(devh, VS_FMT_GUID_Y16)
 
-                libuvc.uvc_stream_ctrl_format_size(
+                libuvc.uvc_get_stream_ctrl_format_size(
                     devh, byref(ctrl), UVC_FRAME_FORMAT_Y16, frame_formats[0].wWidth,
                     frame_formats[0].wHeight, int(1e7 / frame_formats[0].dwDefaultFrameInterval)
                 )
 
-                with start_streaming(devh, byref(ctrl), PTR_PY_FRAME_CALLBACK, None, 0):
+                with start_streaming(devh, ctrl, PTR_PY_FRAME_CALLBACK, None, 0):
+                    print("STARTED STREAM")
                     while True:
                         data = q.get(True, 500)
                         if data is None:
+                            print("NO DATA")
                             continue
                         callme_maybe(data)
 
