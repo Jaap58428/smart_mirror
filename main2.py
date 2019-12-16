@@ -7,31 +7,30 @@ import cv2
 import signal
 import sys
 import os
+import time
+import threading
 
 BUF_SIZE = 2000
 q = Queue(BUF_SIZE)
 
 def py_frame_callback(frame, userptr):
+    array_pointer = cast(frame.contents.data, POINTER(c_uint16 * (frame.contents.width * frame.contents.height)))
+    data = np.frombuffer(
+        array_pointer.contents, dtype=np.dtype(np.uint16)
+    ).reshape(
+        frame.contents.height, frame.contents.width
+    ) # no copy
+    
+    if frame.contents.data_bytes != (2 * frame.contents.width * frame.contents.height):
+        return
 
-  array_pointer = cast(frame.contents.data, POINTER(c_uint16 * (frame.contents.width * frame.contents.height)))
-  data = np.frombuffer(
-    array_pointer.contents, dtype=np.dtype(np.uint16)
-  ).reshape(
-    frame.contents.height, frame.contents.width
-  ) # no copy
+    if not q.full():
+        q.put(data)
 
-  # data = np.fromiter(
-  #   frame.contents.data, dtype=np.dtype(np.uint8), count=frame.contents.data_bytes
-  # ).reshape(
-  #   frame.contents.height, frame.contents.width, 2
-  # ) # copy
-
-  if frame.contents.data_bytes != (2 * frame.contents.width * frame.contents.height):
-    return
-
-  if not q.full():
-    q.put(data)
-
+# The python documentation specifies that `None` indicates
+# a return of `void` from the C-side.
+# The prototype of the generated function looks like:
+# `void ___(uvc_frame * ___, void * ___)`
 PTR_PY_FRAME_CALLBACK = CFUNCTYPE(None, POINTER(uvc_frame), c_void_p)(py_frame_callback)
 
 class UvcInitError(Exception):
@@ -118,7 +117,7 @@ def uvc_open(dev, devh):
 
 def raw_uvc_start_streaming(devh, ctrl, *args):
     res = libuvc.uvc_start_streaming(devh, byref(ctrl), *args)
-
+    
     if res < 0:
         raise StartStreamError("Couldn't start uvc stream: {}".format(res))
 
@@ -148,19 +147,22 @@ def exitgracefully(ctx, dev, devh):
     def callme(*args):
         print("IM SHUTTING DOWN ALL RESOURCES")
         cv2.destroyAllWindows()
+        print("all windows")
         raw_uvc_stop_streaming(devh)
+        print("stop streaming")
         raw_uvc_unref_device(dev)
+        print("unref")
         raw_uvc_exit(ctx)
-
+        print("uvc exit")
         # You survived a kill yourself. So do it again.
-        os.subprocess.run(["sudo", "pgrep", "python", "| xargs", "kill"])
+        os.subprocess.run(["pgrep", "python", "| sudo xargs", "kill"])
         print("CLEANED UP EVERYTHING")
-        sys.exit(" FOOBAR" / 0)
+        sys.exit("" / 0)
         raise SystemExit
     
     return callme
 
-def streaming(callme_maybe):
+def streaming():
     ctx = POINTER(uvc_context)()
     dev = POINTER(uvc_device)()
     devh = POINTER(uvc_device_handle)()
@@ -191,7 +193,7 @@ def streaming(callme_maybe):
                         if data is None:
                             print("NO DATA")
                             continue
-                        callme_maybe(data)
+                        yield data
 
                     cv2.destroyAllWindows()
 
@@ -200,11 +202,9 @@ def raw_to_8bit(data):
   np.right_shift(data, 8, data)
   return cv2.cvtColor(np.uint8(data), cv2.COLOR_GRAY2RGB)
 
-def showimg(data):
-    data = cv2.resize(data[:,:], (640, 480))
-    img = raw_to_8bit(data)
-    cv2.imshow('Lepton Radiometry', img)
-    cv2.waitKey(1)
-
 if __name__ == '__main__':
-    streaming(showimg)
+    for data in streaming():
+        data = cv2.resize(data[:,:], (640, 480))
+        img = raw_to_8bit(data)
+        cv2.imshow('Lepton Radiometry', img)
+        cv2.waitKey(1)
