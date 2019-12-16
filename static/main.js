@@ -34,6 +34,38 @@ const getConfig = () => {
     // loadingNewConfigAnimation()
 }
 
+const getStreamGrab = () => {
+    const url = "/api/stream"
+
+    saveButton = document.getElementById("saveButton")
+    loadButton = document.getElementById("loadButton")
+
+    image = document.createElement("img")
+    image.setAttribute("src", "screen_grab.jpeg")
+    image.id = "thermalImage"
+    image.onload = () => {
+        saveButton.classList.remove("hideSaveButton");
+        // saveButton.onclick = 
+        image.setAttribute("alt", "Image of the thermal camera in the Smart Mirror");
+    }
+
+    image.onerror = () => {
+        saveButton.classList.add("hideSaveButton");
+        image.setAttribute("alt", "The thermal image could not be loaded.");
+    }
+
+    loadButton.onclick = () => {
+        now = new Date
+        image.setAttribute("src", "screen_grab.gif?" + now.getTime())
+    }
+
+    saveButton.onclick = () => {
+        console.error("IMPLEMENT SAVE FUNCTION");
+    }
+
+    document.getElementById("imageBox").appendChild(image)
+}
+
 const submitConfig = (clickEvent) => {
     results = document.getElementById("form")
 
@@ -241,6 +273,7 @@ const loadResponseToForm = (response) => {
 }
 
 const main = () => {
+    getStreamGrab()
     getConfig()
 }
 

@@ -301,7 +301,7 @@ def start_screen_grab_thread(cv2_stream):
             image = editImageData(frame)
 
             if read_flag:
-                path = '/home/ghost/smart_mirror/rocket/screen_grab.jpeg'
+                path = '/home/ghost/smart_mirror/static/screen_grab.jpeg'
                 cv2.imwrite(path, image)
 
             last_screen_grab_update = current

@@ -15,14 +15,26 @@ html {
 }
 
 header,
-main {
+section {
     padding: 25px;
     background-color: rgb(255, 255, 255);
     margin-bottom: 25px;
 }
 
-main section {
+.introduction {
     margin-bottom: 25px;
+}
+
+.imageBox {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.imageBox img {
+    object-fit: contain;
+    width: 100%;
 }
 
 .attribute_field {
@@ -62,6 +74,32 @@ label:hover {
     transition: all 0.2s;
     border-radius: 10px;
     border: solid 3px;
+}
+
+.loadImageButton{
+    width: auto;
+    border-color: rgb(81, 97, 240);
+    color: rgb(81, 97, 240);
+}
+
+.loadImageButton:hover{
+    background-color: rgb(81, 97, 240);
+    color: rgb(255, 255, 255);
+}
+
+.saveImageButton{
+    width: auto;
+    border-color: rgb(67, 167, 58);
+    color: rgb(67, 167, 58);
+}
+
+.saveImageButton:hover{
+    background-color: rgb(67, 167, 58);
+    color: rgb(255, 255, 255);
+}
+
+.hideSaveButton {
+    visibility: hidden;
 }
 
 .submitbutton {

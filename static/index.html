@@ -15,19 +15,46 @@
 <body>
     <div class="wrapper">
         <header>
-            <h1>Admin Webform</h1>
+            <h1>Smart Mirror Admin</h1>
             <div class="welcome">
-                Welcome to the Smart Mirror admin page. Here you can configure the device.
+                Welcome to the Smart Mirror admin page. Here you can configure the device an see a recent image from the
+                camera stream.
             </div>
         </header>
         <main>
-            <section class="introduction">
-                Bellow options are saved on the Smart Mirror when you press SAVE at the bottom. It is also possible to
-                reset the settings to the default options.
+            <section>
+                <h2>Thermal Camera Image</h2>
+                <div class="introduction">
+                    Here you can grab the latest image from the Mirror's heat camera. This also works when the mirror is
+                    in sleep mode. If for some reason the script is not runnging properly it will show the most recently
+                    saved image.
+                </div>
+                <div class="imageBox" id="imageBox">
+                    <!-- <img id="thermalImage" src="screen_grab.jpeg" alt="Image of the thermal camera in the Smart Mirror"> -->
+                </div>
+                <div class="buttonbox">
+                    <div id="saveButton" class="button saveImageButton hideSaveButton">
+                        Save Image
+                    </div>
+                    <div id="loadButton" class="button loadImageButton">
+                        Load New Image
+                    </div>
+                </div>
+
             </section>
-            <section class="form">
-                <form action="" method="post" id="form"></form>
+
+            <section>
+                <h2>Settings</h2>
+                <div class="introduction">
+                    Bellow options are saved on the Smart Mirror when you press SAVE at the bottom. It is also possible
+                    to
+                    reset the settings to the default options.
+                </div>
+                <div class="form">
+                    <form action="" method="post" id="form"></form>
+                </div>
             </section>
+
         </main>
     </div>
 </body>
