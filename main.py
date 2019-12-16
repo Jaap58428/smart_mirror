@@ -434,8 +434,8 @@ if __name__ == '__main__':
         try:
             res = libuvc.uvc_open(dev, byref(devh))
             if res < 0:
-            print("uvc_open error")
-            exit(1)
+                print("uvc_open error")
+                exit(1)
 
             print("device opened!")
 
