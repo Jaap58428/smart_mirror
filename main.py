@@ -285,6 +285,37 @@ def get_stream():
     return cv2_cap
 
 
+# ONLY USE THIS AS A THREAD
+def start_screen_grab_thread(cv2_stream):
+
+    def write_screen_file(cv2_stream):
+        delay = 1
+        last_screen_grab_update = 0
+        while True:
+            current = time.time()
+            if (current - last_screen_grab_update) < delay:
+                continue
+
+            cv2_stream.grab()
+            read_flag, frame = cv2_stream.retrieve(0)
+            image = editImageData(frame)
+
+            if read_flag:
+                path = '/home/ghost/smart_mirror/rocket/screen_grab.jpeg'
+                cv2.imwrite(path, image)
+
+            last_screen_grab_update = current
+
+    screen_grab_thread = threading.Thread(
+        target=write_screen_file,
+        args=(cv2_stream, ),
+        daemon=True  # kills thread once main dies
+    )
+    screen_grab_thread.start()
+
+    return screen_grab_thread
+
+
 if __name__ == '__main__':
     with Board() as _, MotionSense(7) as motion_sensor, TempSense(17) as ambient_temp_sensor:
         # Open thermal camera stream
@@ -293,6 +324,9 @@ if __name__ == '__main__':
         # SETUP AMBIENT TEMP SENSOR
         last_ambient_temp_req_time = 0
         update_ambient_temp_data(ambient_temp_sensor)
+
+        # START SCREEN GRAB THREAD
+        screen_grabber = start_screen_grab_thread(cv2_stream)
 
         # GET ROOT WINDOW
         window = get_main_window()
