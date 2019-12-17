@@ -56,7 +56,7 @@ const getStreamGrab = () => {
 
     loadButton.onclick = () => {
         now = new Date
-        image.setAttribute("src", "screen_grab.gif?" + now.getTime())
+        image.setAttribute("src", "screen_grab.jpeg?" + now.getTime())
     }
 
     saveButton.onclick = () => {

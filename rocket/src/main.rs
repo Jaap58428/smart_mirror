@@ -97,9 +97,12 @@ fn internal_error() -> &'static str {
 }
 
 fn main() {
+    use rocket_contrib::serve::StaticFiles;
+
     rocket::ignite()
         .register(catchers![internal_error, not_found])
-        .mount("/", routes![index])
+        //.mount("/", routes![index])
+        .mount("/", StaticFiles::from("/home/ghost/smart_mirror/static"))
         .mount("/api", routes![config, submit, reset])
         .attach(cors::make_cors())
         .launch();
