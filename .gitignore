@@ -1,6 +1,6 @@
 *.swp
 *.swo
-
+/static/*.jpeg
 log.txt
 
 # Byte-compiled / optimized / DLL files

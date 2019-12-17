@@ -1,17 +1,14 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
-use rocket::{delete, get, post, routes, response::NamedFile};
+use rocket::{catch, catchers, delete, get, post, request::Request, response::NamedFile, routes};
 
 use serde::{Deserialize, Serialize};
 
 use lazy_static::lazy_static;
-use rocket_contrib::{
-    serve::StaticFiles,
-    json::Json,
-};
+use rocket_contrib::json::Json;
 
 use std::{
-    fs::{OpenOptions, File},
+    fs::{File},
     io::{self, Write},
 };
 
@@ -64,20 +61,19 @@ fn config() -> Json<MirrorConfig> {
 }
 
 #[post("/config", format = "application/json", data = "<config>")]
-fn submit(config: Json<MirrorConfig>) -> Result<(), io::Error> {
-    //let mut file = File::create(&*CONFIG_FILE)?;
-    let mut file = OpenOptions::new().write(true).open(&*CONFIG_FILE)?;
+fn submit(config: Json<MirrorConfig>) -> Result<Json<MirrorConfig>, io::Error> {
+    let mut file = File::create(&*CONFIG_FILE)?;
+
+    config.to_writer_pretty(&mut file)?;
     
-    config.into_inner().to_writer_pretty(&mut file)?;
     let _ = file.sync_all()?;
-    Ok(())
+    Ok(config)
 }
 
 #[delete("/config")]
 fn reset() -> Result<Json<MirrorConfig>, io::Error> {
-    //let mut file = File::create(&*CONFIG_FILE)?;
-   
-    let mut file = OpenOptions::new().write(true).open(&*CONFIG_FILE)?;
+    let mut file = File::create(&*CONFIG_FILE)?;
+
     let default_config = MirrorConfig::default();
     default_config.to_writer_pretty(&mut file)?;
 
@@ -90,9 +86,23 @@ fn index() -> io::Result<NamedFile> {
     NamedFile::open("/home/ghost/smart_mirror/static/index.html")
 }
 
+#[catch(404)]
+fn not_found(req: &Request) -> String {
+    format!("I couldn't find '{}'. Try something else?", req.uri())
+}
+
+#[catch(500)]
+fn internal_error() -> &'static str {
+    "Whoops! Looks like we messed up."
+}
+
 fn main() {
+    use rocket_contrib::serve::StaticFiles;
+
     rocket::ignite()
-        .mount("/", routes![index])
+        .register(catchers![internal_error, not_found])
+        //.mount("/", routes![index])
+        .mount("/", StaticFiles::from("/home/ghost/smart_mirror/static"))
         .mount("/api", routes![config, submit, reset])
         .attach(cors::make_cors())
         .launch();

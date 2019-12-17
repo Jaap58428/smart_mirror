@@ -19,14 +19,12 @@ from pathlib import Path  # python3 only
 from dotenv import load_dotenv
 import threading
 
-
 # SETUP SETTINGS
 env_path = Path('/home/pi/rocket') / '.env'
 load_dotenv(dotenv_path=env_path)
 config_path = os.getenv("CONFIG_FILE")
 with open('/home/ghost/smart_mirror/rocket/' + config_path, "r") as f:
     settings = json.load(f)
-
 
 if os.name == 'nt':
     from sensor import MotionSenseMock as MotionSense
@@ -37,13 +35,11 @@ else:
     from sensor import TempSense
     from sensor import MotionSense
 
-
 LABEL_STRINGS = {
     "temp": "Ambient temperature",
     "hum": "Ambient humidity",
     "last_update": "LAST UPDATE"
 }
-
 
 ambient_sensor_data = {
     "temp": 0,
@@ -52,8 +48,34 @@ ambient_sensor_data = {
 }
 
 
+def ktof(val):
+    return (1.8 * ktoc(val) + 32.0)
+
+
 def ktoc(val):
     return (val - 27315) / 100.0
+
+
+def applyColorScheme(img, color_scheme):
+    color_scheme = "BLUE_RED" if color_scheme is None else False
+    COLOR_PALETS = {
+        "BLUE_RED": (120, 180),  # blue to red
+        "RAINBOW": (0, 180),  # full spectrum
+        "TOXIC": (30, 60)  # yellow to green
+    }
+
+    for column in img:
+        for (i, pixel) in enumerate(column):
+            # gives between 0 and 255
+            temp_ratio = pixel.split()[0] / 255.0  # or 0 or 1, equal values
+
+            low_end, high_end = COLOR_PALETS[color_scheme]
+            hue = low_end + (temp_ratio * (high_end - low_end))
+
+            r, g, b = colorsys.hls_to_rgb(hue, 255, 255)
+            column[i] = " ".join([r, g, b])
+
+    return img
 
 
 def display_temperature(img, val_k, loc, color):
@@ -64,9 +86,31 @@ def display_temperature(img, val_k, loc, color):
     cv2.line(img, (x, y - 2), (x, y + 2), color, 1)
 
 
+# class SignalHandler():
+#     def __init__(self, ctx, uvc, device, stream):
+#         self.uvc = uvc
+#         self.device = device
+#         self.stream = stream
+#
+#         signal.signal(signal.SIGINT, self.exitgracefully)
+#         signal.signal(signal.SIGTERM, self.exitgracefully)
+#
+#     def exitgracefully(self, thing1, thing2):
+#         print("[*] CALLED EXITGRACEFULLY [*]")
+#         print("[*] THING1: {} [*]".format(thing1))
+#         print("[*] THING2: {} [*]".format(thing2))
+#         self.stream.__exit__()
+#         self.device.__exit__()
+#         self.uvc.__exit__()
+#         raise(SystemExit)
+
+
 class Color(Enum):
     BACKGROUND = "#000"
     FONT_COLOR = "#FFF"
+    HEAT_PANEL = "#F00"
+    DATA_PANEL = "#0F0"
+    DEBUG_PANEL = "#00F"
 
 
 def get_main_window():
@@ -102,8 +146,8 @@ def get_heat_image_panel(parent):
         parent,
         border=0,
         bg=Color.BACKGROUND.value,
-        width=0,
-        height=0,
+        width=640,
+        height=480,
     )
     heat_image_panel.pack(side=tk.TOP, anchor=tk.W)
     return heat_image_panel
@@ -131,7 +175,7 @@ def generate_data_labels(parent, data_set):
 def get_data_panel(parent, data_set):
     data_panel = tk.Frame(parent)
     data_panel.configure(
-        bg=Color.BACKGROUND.value,
+        bg=Color.DATA_PANEL.value,
         height=10,
     )
 
@@ -152,7 +196,7 @@ def read_ambient_temp_sensor(tmpsensor):
         if (time.time() - last_update) < delay:
             continue
 
-   
+    
         (hum, temp) = tmpsensor.sense()
         hum = round(hum, 2)
         temp = round(temp, 2)
@@ -244,7 +288,7 @@ def generate_debug_labels(parent):
 def get_debug_panel(parent):
     debug_panel = tk.Frame(parent)
     debug_panel.configure(
-        bg=Color.BACKGROUND.value,
+        bg=Color.DEBUG_PANEL.value,
     )
     updated_debug_panel, string_pointers = generate_debug_labels(debug_panel)
     updated_debug_panel.pack(side=tk.BOTTOM, anchor=tk.W)
@@ -257,8 +301,9 @@ def editImageData(frame):
     # @NOTE: As of this moment (16-12-2019), we hit an assertion with the {min|max}.
     # This is a cv2 error.
     #minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(frame)
-   # cv2.normalize(frame, frame, 0, 65535, cv2.NORM_MINMAX)
-   # np.right_shift(frame, 8, frame)
+    #cv2.normalize(frame, frame, 0, 65535, cv2.NORM_MINMAX)
+    #np.right_shift(frame, 8, frame)
+    img = cv2.cvtColor(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), cv2.COLOR_GRAY2RGB)
 
     # https://docs.opencv.org/master/d3/d50/group__imgproc__colormap.html
     #img = cv2.applyColorMap(img, cv2.COLORMAP_HOT)
@@ -266,12 +311,9 @@ def editImageData(frame):
     #display_temperature(img, minVal, minLoc, (255, 255, 255))
     #display_temperature(img, maxVal, maxLoc, (255, 255, 255))
 
-    return frame
+    
 
-
-def convertNumpyToGuiElement(frame):
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    return ImageTk.PhotoImage(Image.fromarray(frame))
+    return Image.fromarray(ImageTk.PhotoImage(img))
 
 
 def get_stream():
@@ -289,39 +331,6 @@ def get_stream():
     return cv2_cap
 
 
-# ONLY USE THIS AS A THREAD
-def start_screen_grab_thread(cv2_stream):
-
-    def write_screen_file(cv2_stream):
-        delay = 1
-        last_screen_grab_update = 0
-        while True:
-            current = time.time()
-            if (current - last_screen_grab_update) < delay:
-                continue
-
-            cv2_stream.grab()
-            read_flag, frame = cv2_stream.retrieve(0)
-            image = editImageData(frame)
-
-            if read_flag:
-                path = '/home/ghost/smart_mirror/static/screen_grab.jpeg'
-                cv2.imwrite(path, image)
-                read_flag = False
-                print("image written")
-
-            last_screen_grab_update = current
-
-    screen_grab_thread = threading.Thread(
-        target=write_screen_file,
-        args=(cv2_stream, ),
-        daemon=True  # kills thread once main dies
-    )
-    screen_grab_thread.start()
-
-    return screen_grab_thread
-
-
 if __name__ == '__main__':
     with Board() as _, MotionSense(7) as motion_sensor, TempSense(17) as ambient_temp_sensor:
         # Open thermal camera stream
@@ -330,9 +339,6 @@ if __name__ == '__main__':
         # SETUP AMBIENT TEMP SENSOR
         last_ambient_temp_req_time = 0
         update_ambient_temp_data(ambient_temp_sensor)
-
-        # START SCREEN GRAB THREAD
-        screen_grabber = start_screen_grab_thread(cv2_stream)
 
         # GET ROOT WINDOW
         window = get_main_window()
@@ -361,18 +367,18 @@ if __name__ == '__main__':
             time_passed = time.time() - start_time
             if time_passed < settings["sleep_timeout_sec"]:
 
-                # GET IMAGE FROM CAMERA
+                ## GET IMAGE FROM CAMERA
                 cv2_stream.grab()
                 read_flag, frame = cv2_stream.retrieve(0)
 
                 # Update heat image panel
                 img = editImageData(frame)
-                img = convertNumpyToGuiElement(img)
                 heat_image_panel.configure(
                     image=img
                 )
                 heat_image_panel.image = img
 
+                #update_ambient_temp_data(ambient_temp_sensor)
                 update_string_pointers(data_string_pointers, ambient_sensor_data)
                 #print(ambient_sensor_data)
                 # Update timer
@@ -391,10 +397,12 @@ if __name__ == '__main__':
                 if movement(motion_sensor):
                     show_gui(panels)
                     start_time = time.time()
+            print("Jaap wanted to see mee here")
             window.update_idletasks()
             window.update()
 
             # FPS = how many frames fit in one seconds, so 1 sec / FPS to sleep
             time.sleep((1 / settings.get("screen_max_frame_rate", 1)))
-    cv2_stream.release()
+    #cv2_stream.release()
     cv2.destroyAllWindows()
+
