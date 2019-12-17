@@ -19,3 +19,4 @@ then
 fi
 
 sudo python3 /home/ghost/smart_mirror/main.py >> /home/ghost/smart_mirror/log.txt &
+

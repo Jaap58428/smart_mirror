@@ -152,7 +152,7 @@ def read_ambient_temp_sensor(tmpsensor):
         if (time.time() - last_update) < delay:
             continue
 
-    
+   
         (hum, temp) = tmpsensor.sense()
         hum = round(hum, 2)
         temp = round(temp, 2)
@@ -398,4 +398,3 @@ if __name__ == '__main__':
             time.sleep((1 / settings.get("screen_max_frame_rate", 1)))
     cv2_stream.release()
     cv2.destroyAllWindows()
-
