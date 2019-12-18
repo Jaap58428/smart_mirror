@@ -18,5 +18,6 @@ then
 	sleep 2s
 fi
 
+sudo echo "BAZR" >> /home/ghost/smart_mirror/runned.txt
 sudo python3 /home/ghost/smart_mirror/main.py >> /home/ghost/smart_mirror/log.txt &
 

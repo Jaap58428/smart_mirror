@@ -329,7 +329,7 @@ if __name__ == '__main__':
 
         # SETUP AMBIENT TEMP SENSOR
         last_ambient_temp_req_time = 0
-        update_ambient_temp_data(ambient_temp_sensor)
+        #  update_ambient_temp_data(ambient_temp_sensor)
 
         # START SCREEN GRAB THREAD
         screen_grabber = start_screen_grab_thread(cv2_stream)

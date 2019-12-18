@@ -10,28 +10,17 @@ const attributes = {
 }
 
 const getConfig = () => {
-    // For debug purposes
-    loadResponseToForm({
-        "use_humidity": true,
-        "display_host_ip": true,
-        "display_sleep_timer": true,
-        "display_debug_panel": true,
-        "sleep_timeout_sec": 20,
-        "screen_max_frame_rate": 25,
-        "ambient_temp_delay": 2,
-    })
+     const url = "/api/config"
+     var xhttp = new XMLHttpRequest();
 
-    // const url = "/api/config"
-    // var xhttp = new XMLHttpRequest();
-
-    // xhttp.onload = () => {
-    //     clearForm()
-    //     loadResponseToForm(xhttp.response)
-    // };
-    // xhttp.open("GET", url, true);
-    // clearForm()
-    // xhttp.send();
-    // loadingNewConfigAnimation()
+     xhttp.onload = () => {
+         clearForm()
+         loadResponseToForm(xhttp.response)
+     };
+     xhttp.open("GET", url, true);
+     clearForm()
+     xhttp.send();
+     loadingNewConfigAnimation()
 }
 
 const getStreamGrab = () => {
