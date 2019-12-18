@@ -34,6 +34,7 @@ const getConfig = () => {
     // loadingNewConfigAnimation()
 }
 
+
 const getStreamGrab = () => {
     const url = "/api/stream"
 
@@ -51,21 +52,39 @@ const getStreamGrab = () => {
 
     image.onerror = () => {
         saveButton.classList.add("hideSaveButton");
-        image.setAttribute("alt", "The thermal image could not be loaded.");
     }
 
     loadButton.onclick = () => {
-        now = new Date
-        image.setAttribute("src", "screen_grab.jpeg?" + now.getTime())
+        loadButton.classList.add("hideSaveButton");
+        saveButton.classList.add("hideSaveButton");
+
+        image.src = ""
+        image.setAttribute("alt", "Loading new image...");
+
+        myBar = document.createElement("div")
+        myBar.classList.add("myBar")
+
+        myProgress = document.createElement("div")
+        myProgress.classList.add("myProgress")
+        myProgress.appendChild(myBar)
+
+        document.getElementById("imageBox").appendChild(myProgress)
+
+        setTimeout(()=>{
+            now = new Date
+            image.setAttribute("src", "screen_grab.jpeg?" + now.getTime())
+            loadButton.classList.remove("hideSaveButton");
+            document.getElementById("imageBox").removeChild(myProgress)
+        }, 3000)
     }
 
-    
+
     saveButton.onclick = () => {
         a = document.createElement("a")
         // Use this in case you want to make a download dialog
         // Needs fixing though, content of download is invalid
         // a.href = "data:application/octet-stream," + encodeURIComponent(image)
-        a.href = "screen_grab.jpeg" 
+        a.href = "screen_grab.jpeg"
         a.target = "_blank"
         a.download = "screen_grab.jpeg"
         a.click()
