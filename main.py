@@ -275,18 +275,32 @@ def convertNumpyToGuiElement(frame):
 
 
 def get_stream():
-    # capture from the LAST camera in the system
-    # presumably, if the system has a built-in webcam it will be the first
-    for i in reversed(range(10)):
-        cv2_cap = cv2.VideoCapture(i)
-        if cv2_cap.isOpened():
+    width = 160
+    height = 120
+    channels = 1
+    packets = 20
+    byte_size = width * height * channels / packets
+
+    UDP_IP = "127.0.0.1"
+    UDP_PORT = 999
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind((UDP_IP, UDP_PORT))
+
+    s = ""
+
+    while True:
+        data, addr = sock.recvfrom(byte_size)
+        s += data
+        if len(s) == (byte_size * 20):
+            frame = np.fromstring(s, dtype=np.uint8)
+            frame = frame.reshape(height, width, channels)
+            cv2.imshow("frame", frame)
+
+            s = ""
+        if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    if not cv2_cap.isOpened():
-        print("Camera not found!")
-        exit(1)
-
-    return cv2_cap
+    return -1
 
 
 # ONLY USE THIS AS A THREAD
@@ -331,8 +345,9 @@ if __name__ == '__main__':
         last_ambient_temp_req_time = 0
         #  update_ambient_temp_data(ambient_temp_sensor)
 
-        # START SCREEN GRAB THREAD
-        screen_grabber = start_screen_grab_thread(cv2_stream)
+        # START STREAM THREAD
+        # TODO: needs rewriting to match new stream protocol
+        # screen_grabber = start_screen_grab_thread(cv2_stream)
 
         # GET ROOT WINDOW
         window = get_main_window()
@@ -361,20 +376,20 @@ if __name__ == '__main__':
             time_passed = time.time() - start_time
             if time_passed < settings["sleep_timeout_sec"]:
 
+                # TODO: needs rewriting to match new stream protocol
                 # GET IMAGE FROM CAMERA
-                cv2_stream.grab()
-                read_flag, frame = cv2_stream.retrieve(0)
-
-                # Update heat image panel
-                img = editImageData(frame)
-                img = convertNumpyToGuiElement(img)
-                heat_image_panel.configure(
-                    image=img
-                )
-                heat_image_panel.image = img
+                # cv2_stream.grab()
+                # read_flag, frame = cv2_stream.retrieve(0)
+                #
+                # # Update heat image panel
+                # img = editImageData(frame)
+                # img = convertNumpyToGuiElement(img)
+                # heat_image_panel.configure(
+                #     image=img
+                # )
+                # heat_image_panel.image = img
 
                 update_string_pointers(data_string_pointers, ambient_sensor_data)
-                #print(ambient_sensor_data)
                 # Update timer
                 if settings["display_debug_panel"] and settings["display_sleep_timer"]:
                     time_str = round(time_passed, 1)
