@@ -59,8 +59,16 @@ const getStreamGrab = () => {
         image.setAttribute("src", "screen_grab.jpeg?" + now.getTime())
     }
 
+    
     saveButton.onclick = () => {
-        console.error("IMPLEMENT SAVE FUNCTION");
+        a = document.createElement("a")
+        // Use this in case you want to make a download dialog
+        // Needs fixing though, content of download is invalid
+        // a.href = "data:application/octet-stream," + encodeURIComponent(image)
+        a.href = "screen_grab.jpeg" 
+        a.target = "_blank"
+        a.download = "screen_grab.jpeg"
+        a.click()
     }
 
     document.getElementById("imageBox").appendChild(image)
