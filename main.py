@@ -283,11 +283,13 @@ def editImageData(frame):
    # cv2.normalize(frame, frame, 0, 65535, cv2.NORM_MINMAX)
    # np.right_shift(frame, 8, frame)
 
-    # https://docs.opencv.org/master/d3/d50/group__imgproc__colormap.html
-    #img = cv2.applyColorMap(img, cv2.COLORMAP_HOT)
+    frame = cv2.cvtColor(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), cv2.COLOR_GRAY2RGB)
 
-    #display_temperature(img, minVal, minLoc, (255, 255, 255))
-    #display_temperature(img, maxVal, maxLoc, (255, 255, 255))
+    # https://docs.opencv.org/master/d3/d50/group__imgproc__colormap.html
+    frame = cv2.applyColorMap(frame, cv2.COLORMAP_HOT)
+
+    # display_temperature(img, minVal, minLoc, (255, 255, 255))
+    # display_temperature(img, maxVal, maxLoc, (255, 255, 255))
 
     return frame
 
