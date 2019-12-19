@@ -27,6 +27,8 @@ config_path = os.getenv("CONFIG_FILE")
 with open('/home/ghost/smart_mirror/rocket/' + config_path, "r") as f:
     settings = json.load(f)
 
+settings["run_ambient_sensor_thread"] = True
+settings["admin_camera_feed"] = True
 
 if os.name == 'nt':
     from sensor import MotionSenseMock as MotionSense
@@ -122,8 +124,12 @@ def generate_data_labels(parent, data_set):
             fg=Color.FONT_COLOR.value,
             width=10,
             anchor=tk.W,
-            font=("default", 40)
+            font=("default", 20)
         )
+        if settings["run_ambient_sensor_thread"]:
+            new_label.configure(
+                font=("default", 0)
+            )
         new_label.pack()
     return parent, string_pointers
 
@@ -251,8 +257,25 @@ def get_debug_panel(parent):
     return updated_debug_panel, string_pointers
 
 
+def rotate_frame(img):
+    # get image height, width
+    (h, w) = img.shape[:2]
+    # calculate the center of the image
+    center = (w / 2, h / 2)
+
+    angle90 = 90
+    scale = 1.0
+
+    # Perform the counter clockwise rotation holding at the center
+    M = cv2.getRotationMatrix2D(center, angle90, scale)
+    rotated90 = cv2.warpAffine(img, M, (h, w))
+    return rotated90
+
+
 def editImageData(frame):
     #frame = cv2.resize(frame[:, :], (640, 480))
+
+    frame = rotate_frame(frame)
 
     # @NOTE: As of this moment (16-12-2019), we hit an assertion with the {min|max}.
     # This is a cv2 error.
@@ -260,11 +283,13 @@ def editImageData(frame):
    # cv2.normalize(frame, frame, 0, 65535, cv2.NORM_MINMAX)
    # np.right_shift(frame, 8, frame)
 
-    # https://docs.opencv.org/master/d3/d50/group__imgproc__colormap.html
-    #img = cv2.applyColorMap(img, cv2.COLORMAP_HOT)
+    frame = cv2.cvtColor(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), cv2.COLOR_GRAY2RGB)
 
-    #display_temperature(img, minVal, minLoc, (255, 255, 255))
-    #display_temperature(img, maxVal, maxLoc, (255, 255, 255))
+    # https://docs.opencv.org/master/d3/d50/group__imgproc__colormap.html
+    frame = cv2.applyColorMap(frame, cv2.COLORMAP_HOT)
+
+    # display_temperature(img, minVal, minLoc, (255, 255, 255))
+    # display_temperature(img, maxVal, maxLoc, (255, 255, 255))
 
     return frame
 
@@ -343,11 +368,13 @@ if __name__ == '__main__':
 
         # SETUP AMBIENT TEMP SENSOR
         last_ambient_temp_req_time = 0
-        #  update_ambient_temp_data(ambient_temp_sensor)
+        if settings["run_ambient_sensor_thread"]:
+            update_ambient_temp_data(ambient_temp_sensor)
 
-        # START STREAM THREAD
-        # TODO: needs rewriting to match new stream protocol
-        # screen_grabber = start_screen_grab_thread(cv2_stream)
+        # START SCREEN GRAB THREAD
+        if settings["admin_camera_feed"]:
+            start_screen_grab_thread(cv2_stream)
+
 
         # GET ROOT WINDOW
         window = get_main_window()
