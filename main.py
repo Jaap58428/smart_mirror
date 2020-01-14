@@ -18,6 +18,9 @@ import numpy as np
 from pathlib import Path  # python3 only
 from dotenv import load_dotenv
 import threading
+import zmq
+import base64
+
 
 
 # SETUP SETTINGS
@@ -104,10 +107,14 @@ def get_heat_image_panel(parent):
         parent,
         border=0,
         bg=Color.BACKGROUND.value,
-        width=0,
-        height=0,
+        # bg = "#ffffff",
+        width=640,
+        height=480,
     )
+
+    # heat_image_panel.pack(expand="yes", side=tk.TOP, anchor=tk.W, fill="both")
     heat_image_panel.pack(side=tk.TOP, anchor=tk.W)
+    # heat_image_panel.pack()
     return heat_image_panel
 
 
@@ -273,9 +280,10 @@ def rotate_frame(img):
 
 
 def editImageData(frame):
-    #frame = cv2.resize(frame[:, :], (640, 480))
-
     frame = rotate_frame(frame)
+    # Arguments are in the (x, y) form here
+    # frame = cv2.resize(frame[:, :], (1100, 1800))
+
 
     # @NOTE: As of this moment (16-12-2019), we hit an assertion with the {min|max}.
     # This is a cv2 error.
@@ -283,10 +291,10 @@ def editImageData(frame):
    # cv2.normalize(frame, frame, 0, 65535, cv2.NORM_MINMAX)
    # np.right_shift(frame, 8, frame)
 
-    frame = cv2.cvtColor(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), cv2.COLOR_GRAY2RGB)
+    # frame = cv2.cvtColor(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), cv2.COLOR_GRAY2RGB)
 
     # https://docs.opencv.org/master/d3/d50/group__imgproc__colormap.html
-    frame = cv2.applyColorMap(frame, cv2.COLORMAP_RAINBOW)
+    #frame = cv2.applyColorMap(frame, cv2.COLORMAP_RAINBOW)
 
     # display_temperature(img, minVal, minLoc, (255, 255, 255))
     # display_temperature(img, maxVal, maxLoc, (255, 255, 255))
@@ -297,6 +305,10 @@ def editImageData(frame):
 def convertNumpyToGuiElement(frame):
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     return ImageTk.PhotoImage(Image.fromarray(frame))
+
+
+def receive_frame():
+
 
 
 def get_stream():
@@ -325,9 +337,12 @@ def start_screen_grab_thread(cv2_stream):
             if (current - last_screen_grab_update) < delay:
                 continue
 
-            cv2_stream.grab()
-            read_flag, frame = cv2_stream.retrieve(0)
-            image = editImageData(frame)
+            frame = footage_socket.recv_string()
+            img = base64.b64decode(frame)
+            npimg = np.fromstring(img, dtype=np.uint8)
+            source = cv2.imdecode(npimg, 1)
+
+            image = editImageData(source)
 
             if read_flag:
                 path = '/home/ghost/smart_mirror/static/screen_grab.jpeg'
@@ -352,7 +367,10 @@ def start_screen_grab_thread(cv2_stream):
 if __name__ == '__main__':
     with Board() as _, MotionSense(7) as motion_sensor, TempSense(17) as ambient_temp_sensor:
         # Open thermal camera stream
-        cv2_stream = get_stream()
+        context = zmq.Context()
+        footage_socket = context.socket(zmq.SUB)
+        footage_socket.bind('tcp://*:5555')
+        footage_socket.setsockopt_string(zmq.SUBSCRIBE, np.unicode(''))
 
         # SETUP AMBIENT TEMP SENSOR
         last_ambient_temp_req_time = 0
@@ -361,7 +379,7 @@ if __name__ == '__main__':
 
         # START SCREEN GRAB THREAD
         if settings["admin_camera_feed"]:
-            start_screen_grab_thread(cv2_stream)
+            start_screen_grab_thread(footage_socket)
 
 
         # GET ROOT WINDOW
@@ -391,15 +409,17 @@ if __name__ == '__main__':
             time_passed = time.time() - start_time
             if time_passed < settings["sleep_timeout_sec"]:
 
-                # GET IMAGE FROM CAMERA
-                cv2_stream.grab()
-                read_flag, frame = cv2_stream.retrieve(0)
+                # GET IMAGE FROM STREAM
+                frame = footage_socket.recv_string()
+                img = base64.b64decode(frame)
+                npimg = np.fromstring(img, dtype=np.uint8)
+                source = cv2.imdecode(npimg, 1)
 
                 # Update heat image panel
-                img = editImageData(frame)
+                img = editImageData(source)
                 img = convertNumpyToGuiElement(img)
                 heat_image_panel.configure(
-                    image=img
+                   image = img,
                 )
                 heat_image_panel.image = img
 
