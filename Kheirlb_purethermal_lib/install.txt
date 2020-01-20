@@ -1,0 +1,6 @@
+Follow these commands to install OpenCV into a Linux machine
+
+$ sudo chmod 775 build_opencv.sh
+$ sudo chmod 775 build_nano_thermal_app.sh
+$ sudo ./build_opencv.sh
+$ sudo ./build_nano_thermal_app.sh
