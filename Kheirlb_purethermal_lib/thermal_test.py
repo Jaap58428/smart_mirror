@@ -5,6 +5,79 @@ from uvctypes import *
 import time
 import cv2
 import numpy as np
+import zmq
+import base64
+import imutils
+
+
+class Capture():
+    """
+    This class captures camera images. It is a resource,
+    and should be constructed using the `with` statement.
+    Furthermore, this class is is an iterator, and as such
+    one can stream the images read from the camera.
+    """
+
+    def __init__(self, camera):
+        """
+        Creates a capture image from the camera
+        """
+        self.capture = cv2.VideoCapture(camera)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.capture.release()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        ret, frame = self.capture.read()
+        if ret:
+            return frame
+        else:
+            raise StopIteration
+
+
+class Socket():
+    """
+    A Socket is a class that holds a zmq socket.
+    When created, no connection is yet established.
+    In order to connect to a remote host, use the
+    `connect` method.
+    """
+
+    def __init__(self):
+        self.context = zmq.Context()
+        self.socket = self.context.socket(zmq.PUB)
+
+    def set_connection(self, addr):
+        self.socket.connect(addr)
+
+    def connect(self, addr):
+        self.set_connection(addr)
+        return Connection(self)
+
+    def send(self, value):
+        self.socket.send(value)
+
+
+class Connection():
+    """
+    A Connection is a class that represents an
+    open socket connection to a host. Values
+    can be send trough the connection using the
+    `send` method
+    """
+
+    def __init__(self, socket):
+        self.socket = socket
+
+    def send(self, value):
+        self.socket.send(value)
+
 
 try:
     from queue import Queue
@@ -106,15 +179,45 @@ def main():
                 exit(1)
 
             try:
+
+                # Setup TCP connections
+                socket = Socket()
+                connection = socket.connect('tcp://192.168.137.163:5555')
+
+                # Load face detection filter
+                face_cascade = cv2.CascadeClassifier(
+                    '/home/ghost/Documents/HSL/ISEN/smart_mirror/haarcascade_upperbody.xml')
+
                 while True:
                     data = q.get(True, 500)
                     if data is None:
                         break
                     data = cv2.resize(data[:, :], (640, 480))
+
+                    # Add face detection and rectangles
+                    gray = cv2.cvtColor(data, cv2.COLOR_BGR2GRAY)
+                    detected_faces = face_cascade.detectMultiScale(gray, scaleFactor=1.5, minNeighbors=5)
+                    for (column, row, width, height) in detected_faces:
+                        cv2.rectangle(
+                            data,
+                            (column, row),
+                            (column + width, row + height),
+                            (0, 255, 0),
+                            2
+                        )
+
                     minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
                     img = raw_to_8bit(data)
                     display_temperature(img, minVal, minLoc, (255, 0, 0))
                     display_temperature(img, maxVal, maxLoc, (0, 0, 255))
+
+                    img = imutils.rotate_bound(img, 270)
+
+                    # Send img over TCP connection
+                    encoded, buffer = cv2.imencode('.jpg', img)
+                    jpg_as_text = base64.b64encode(buffer)
+                    connection.send(jpg_as_text)
+
                     cv2.imshow('Lepton Radiometry', img)
                     cv2.waitKey(1)
 

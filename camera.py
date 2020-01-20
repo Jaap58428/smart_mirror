@@ -4,6 +4,7 @@ import zmq
 import base64
 import imutils
 
+
 class Capture():
     """
     This class captures camera images. It is a resource,
@@ -11,15 +12,16 @@ class Capture():
     Furthermore, this class is is an iterator, and as such
     one can stream the images read from the camera.
     """
+
     def __init__(self, camera):
         """
         Creates a capture image from the camera
         """
         self.capture = cv2.VideoCapture(camera)
-    
+
     def __enter__(self):
         return self
-    
+
     def __exit__(self, *args):
         self.capture.release()
 
@@ -41,17 +43,18 @@ class Socket():
     In order to connect to a remote host, use the
     `connect` method.
     """
+
     def __init__(self):
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.PUB)
-    
+
     def set_connection(self, addr):
         self.socket.connect(addr)
 
     def connect(self, addr):
         self.set_connection(addr)
         return Connection(self)
-    
+
     def send(self, value):
         self.socket.send(value)
 
@@ -63,6 +66,7 @@ class Connection():
     can be send trough the connection using the
     `send` method
     """
+
     def __init__(self, socket):
         self.socket = socket
 
@@ -71,12 +75,14 @@ class Connection():
 
 
 def ktof(val):
-    #return val
-    #return 1.8 * val + 32
+    # return val
+    # return 1.8 * val + 32
     return (1.8 * ktoc(val) + 32.0)
+
 
 def ktoc(val):
     return (val - 27315) / 100.0
+
 
 def display_temperature(img, val_k, loc, color):
     val = ktof(val_k)
@@ -84,6 +90,7 @@ def display_temperature(img, val_k, loc, color):
     x, y = loc
     cv2.line(img, (x - 2, y), (x + 2, y), color, 1)
     cv2.line(img, (x, y - 2), (x, y + 2), color, 1)
+
 
 def rotate_frame(img):
     # get image height, width
@@ -104,7 +111,7 @@ def editImageData(frame, face_cascade):
     frame = cv2.resize(frame[:, :], (640, 480))
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    detected_faces = face_cascade.detectMultiScale(gray, scaleFactor = 1.5, minNeighbors = 5)
+    detected_faces = face_cascade.detectMultiScale(gray, scaleFactor=1.5, minNeighbors=5)
 
     for (column, row, width, height) in detected_faces:
         cv2.rectangle(
@@ -115,36 +122,34 @@ def editImageData(frame, face_cascade):
             2
         )
 
-
-    #img_norm = cv2.normalize(gray, dst = None, alpha = 0, beta = 65535, norm_type = cv2.NORM_MINMAX)
+    # img_norm = cv2.normalize(gray, dst = None, alpha = 0, beta = 65535, norm_type = cv2.NORM_MINMAX)
     gray = np.array(gray, dtype=np.uint24)
     minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(gray)
     display_temperature(frame, minVal, minLoc, (255, 0, 0))
     display_temperature(frame, maxVal, maxLoc, (0, 0, 255))
-    #cv2.normalize(frame, frame, 0, 65535, cv2.NORM_MINMAX)
-    #np.right_shift(frame, 8, frame)
-    #img = cv2.cvtColor(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), cv2.COLOR_GRAY2RGB)
+    # cv2.normalize(frame, frame, 0, 65535, cv2.NORM_MINMAX)
+    # np.right_shift(frame, 8, frame)
+    # img = cv2.cvtColor(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), cv2.COLOR_GRAY2RGB)
 
     # https://docs.opencv.org/master/d3/d50/group__imgproc__colormap.html
-    #img = cv2.applyColorMap(img, cv2.COLORMAP_HOT)
-    
-    
- #   tmp = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
- #   _,alpha = cv2.threshold(tmp, 180, 255, cv2.THRESH_BINARY)
- #   b, g, r = cv2.split(img)
- #   rgba = [b,g,r, alpha]
- #   dst = cv2.merge(rgba, 4)
-    
-  #  img = dst
-    
+    # img = cv2.applyColorMap(img, cv2.COLORMAP_HOT)
+
+    #   tmp = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    #   _,alpha = cv2.threshold(tmp, 180, 255, cv2.THRESH_BINARY)
+    #   b, g, r = cv2.split(img)
+    #   rgba = [b,g,r, alpha]
+    #   dst = cv2.merge(rgba, 4)
+
+    #  img = dst
+
     return frame
+
 
 socket = Socket()
 connection = socket.connect('tcp://192.168.137.163:5555')
 face_cascade = cv2.CascadeClassifier('/home/ghost/Documents/HSL/ISEN/smart_mirror/haarcascade_upperbody.xml')
- 
+
 with Capture(2) as c:
-    
     for frame in c:
         frame = editImageData(frame, face_cascade)
         frame = imutils.rotate_bound(frame, 270)
