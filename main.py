@@ -12,7 +12,6 @@ import colorsys
 import json
 from PIL import Image
 from PIL import ImageTk
-from uvctypes import *
 import time
 import cv2
 import numpy as np
