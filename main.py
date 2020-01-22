@@ -23,7 +23,7 @@ import base64
 with open('rocket/mirror.conf', "r") as f:
     settings = json.load(f)
 
-print("settings loaded: \n settings")
+print("settings loaded:\n{}".format(settings))
 
 settings["run_ambient_sensor_thread"] = False
 settings["admin_camera_feed"] = False
@@ -341,7 +341,7 @@ def start_screen_grab_thread(cv2_stream):
             image = editImageData(source)
 
             if read_flag:
-                path = '/home/ghost/smart_mirror/static/screen_grab.jpeg'
+                path = 'static/screen_grab.jpeg'
                 cv2.imwrite(path, image)
                 read_flag = False
                 print("image written")
