@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import tkinter as tk
+import imutils
 import random
 import socket
 import signal
@@ -18,7 +19,8 @@ import numpy as np
 from pathlib import Path  # python3 only
 from dotenv import load_dotenv
 import threading
-
+import zmq
+import base64
 
 # SETUP SETTINGS
 env_path = Path('/home/pi/rocket') / '.env'
@@ -39,13 +41,11 @@ else:
     from sensor import TempSense
     from sensor import MotionSense
 
-
 LABEL_STRINGS = {
     "temp": "Ambient temperature",
     "hum": "Ambient humidity",
     "last_update": "LAST UPDATE"
 }
-
 
 ambient_sensor_data = {
     "temp": 0,
@@ -104,16 +104,22 @@ def get_heat_image_panel(parent):
         parent,
         border=0,
         bg=Color.BACKGROUND.value,
-        width=0,
-        height=0,
+        # bg = "#ffffff",
+        width=500,
+        height=700,
     )
+
+    # heat_image_panel.pack(expand="yes", side=tk.TOP, anchor=tk.W, fill="both")
     heat_image_panel.pack(side=tk.TOP, anchor=tk.W)
+    # heat_image_panel.pack()
     return heat_image_panel
 
 
 def generate_data_labels(parent, data_set):
     string_pointers = {}
     for attr, val in data_set.items():
+        if attr is "last_update":
+            continue
         string_pointers[attr] = tk.StringVar()
         attr_string = LABEL_STRINGS[attr]
         string_pointers[attr].set('{0}: {1}'.format(attr_string, str(val)))
@@ -122,13 +128,13 @@ def generate_data_labels(parent, data_set):
             textvariable=string_pointers[attr],
             bg=Color.BACKGROUND.value,
             fg=Color.FONT_COLOR.value,
-            width=10,
+            width=20,
             anchor=tk.W,
-            font=("default", 20)
+            font=("default", 32)
         )
         if settings["run_ambient_sensor_thread"]:
             new_label.configure(
-                font=("default", 0)
+                font=("default", 32)
             )
         new_label.pack()
     return parent, string_pointers
@@ -143,33 +149,32 @@ def get_data_panel(parent, data_set):
 
     updated_data_panel, string_pointers = generate_data_labels(data_panel, data_set)
 
-    updated_data_panel.pack(side=tk.TOP, anchor=tk.E)
+    updated_data_panel.pack(side=tk.BOTTOM, anchor=tk.E)
     return updated_data_panel, string_pointers
 
 
 def read_ambient_temp_sensor(tmpsensor):
-    global ambient_sensor_data    
+    global ambient_sensor_data
     current = time.time()
 
     delay = settings["ambient_temp_delay"]
-    while(True):
+    while (True):
         last_update = ambient_sensor_data["last_update"]
-        
+
         if (time.time() - last_update) < delay:
             continue
 
-   
         (hum, temp) = tmpsensor.sense()
         hum = round(hum, 2)
         temp = round(temp, 2)
 
         ambient_sensor_data["temp"] = temp
-        
+
         if settings["use_humidity"]:
             ambient_sensor_data["hum"] = hum
 
         ambient_sensor_data["last_update"] = time.time()
-        
+
 
 def update_ambient_temp_data(tmpsensor):
     update_temp_thread = threading.Thread(
@@ -259,34 +264,42 @@ def get_debug_panel(parent):
 
 def rotate_frame(img):
     # get image height, width
-    (h, w) = img.shape[:2]
+    # (h, w) = img.shape[:2]
     # calculate the center of the image
-    center = (w / 2, h / 2)
+    # center = (w / 2, h / 2)
 
-    angle90 = 90
-    scale = 1.0
+    angle90 = 270
+    # scale = 1.0
 
     # Perform the counter clockwise rotation holding at the center
-    M = cv2.getRotationMatrix2D(center, angle90, scale)
-    rotated90 = cv2.warpAffine(img, M, (h, w))
-    return rotated90
+    # M = cv2.getRotationMatrix2D(center, angle90, scale)
+    rotated = imutils.rotate_bound(img, angle90)
+    # rotated90 = cv2.warpAffine(img, M, (h, w))
+    return rotated
 
 
 def editImageData(frame):
-    #frame = cv2.resize(frame[:, :], (640, 480))
-
     frame = rotate_frame(frame)
+    # Arguments are in the (x, y) form here
+    # frame = cv2.resize(frame[:, :], (1200, 1600))
+
+    # FILTER IMAGE
+    lower_blue = np.array([0, 0, 120])  # [R value, G value, B value]
+    upper_blue = np.array([100, 0, 255])
+    mask = cv2.inRange(frame, lower_blue, upper_blue)
+
+    frame[mask != 0] = [0, 0, 0]
 
     # @NOTE: As of this moment (16-12-2019), we hit an assertion with the {min|max}.
     # This is a cv2 error.
-    #minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(frame)
-   # cv2.normalize(frame, frame, 0, 65535, cv2.NORM_MINMAX)
-   # np.right_shift(frame, 8, frame)
+    # minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(frame)
+    # cv2.normalize(frame, frame, 0, 65535, cv2.NORM_MINMAX)
+    # np.right_shift(frame, 8, frame)
 
-    frame = cv2.cvtColor(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), cv2.COLOR_GRAY2RGB)
+    # frame = cv2.cvtColor(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), cv2.COLOR_GRAY2RGB)
 
     # https://docs.opencv.org/master/d3/d50/group__imgproc__colormap.html
-    frame = cv2.applyColorMap(frame, cv2.COLORMAP_HOT)
+    # frame = cv2.applyColorMap(frame, cv2.COLORMAP_RAINBOW)
 
     # display_temperature(img, minVal, minLoc, (255, 255, 255))
     # display_temperature(img, maxVal, maxLoc, (255, 255, 255))
@@ -300,37 +313,22 @@ def convertNumpyToGuiElement(frame):
 
 
 def get_stream():
-    width = 160
-    height = 120
-    channels = 1
-    packets = 20
-    byte_size = width * height * channels / packets
-
-    UDP_IP = "127.0.0.1"
-    UDP_PORT = 999
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind((UDP_IP, UDP_PORT))
-
-    s = ""
-
-    while True:
-        data, addr = sock.recvfrom(byte_size)
-        s += data
-        if len(s) == (byte_size * 20):
-            frame = np.fromstring(s, dtype=np.uint8)
-            frame = frame.reshape(height, width, channels)
-            cv2.imshow("frame", frame)
-
-            s = ""
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+    # capture from the LAST camera in the system
+    # presumably, if the system has a built-in webcam it will be the first
+    for i in reversed(range(10)):
+        cv2_cap = cv2.VideoCapture(i)
+        if cv2_cap.isOpened():
             break
 
-    return -1
+    if not cv2_cap.isOpened():
+        print("Camera not found!")
+        exit(1)
+
+    return cv2_cap
 
 
 # ONLY USE THIS AS A THREAD
 def start_screen_grab_thread(cv2_stream):
-
     def write_screen_file(cv2_stream):
         delay = 1
         last_screen_grab_update = 0
@@ -339,9 +337,12 @@ def start_screen_grab_thread(cv2_stream):
             if (current - last_screen_grab_update) < delay:
                 continue
 
-            cv2_stream.grab()
-            read_flag, frame = cv2_stream.retrieve(0)
-            image = editImageData(frame)
+            frame = footage_socket.recv_string()
+            img = base64.b64decode(frame)
+            npimg = np.fromstring(img, dtype=np.uint8)
+            source = cv2.imdecode(npimg, 1)
+
+            image = editImageData(source)
 
             if read_flag:
                 path = '/home/ghost/smart_mirror/static/screen_grab.jpeg'
@@ -353,7 +354,7 @@ def start_screen_grab_thread(cv2_stream):
 
     screen_grab_thread = threading.Thread(
         target=write_screen_file,
-        args=(cv2_stream, ),
+        args=(cv2_stream,),
         daemon=True  # kills thread once main dies
     )
     screen_grab_thread.start()
@@ -364,7 +365,10 @@ def start_screen_grab_thread(cv2_stream):
 if __name__ == '__main__':
     with Board() as _, MotionSense(7) as motion_sensor, TempSense(17) as ambient_temp_sensor:
         # Open thermal camera stream
-        cv2_stream = get_stream()
+        context = zmq.Context()
+        footage_socket = context.socket(zmq.SUB)
+        footage_socket.bind('tcp://*:5555')
+        footage_socket.setsockopt_string(zmq.SUBSCRIBE, np.unicode(''))
 
         # SETUP AMBIENT TEMP SENSOR
         last_ambient_temp_req_time = 0
@@ -373,8 +377,7 @@ if __name__ == '__main__':
 
         # START SCREEN GRAB THREAD
         if settings["admin_camera_feed"]:
-            start_screen_grab_thread(cv2_stream)
-
+            start_screen_grab_thread(footage_socket)
 
         # GET ROOT WINDOW
         window = get_main_window()
@@ -403,18 +406,25 @@ if __name__ == '__main__':
             time_passed = time.time() - start_time
             if time_passed < settings["sleep_timeout_sec"]:
 
-                # TODO: needs rewriting to match new stream protocol
-                # GET IMAGE FROM CAMERA
-                # cv2_stream.grab()
-                # read_flag, frame = cv2_stream.retrieve(0)
-                #
-                # # Update heat image panel
-                # img = editImageData(frame)
-                # img = convertNumpyToGuiElement(img)
-                # heat_image_panel.configure(
-                #     image=img
-                # )
-                # heat_image_panel.image = img
+                # GET IMAGE FROM STREAM
+                frame = None
+                try:
+                    frame = footage_socket.recv_string(flags=zmq.NOBLOCK)
+                except zmq.Again as e:
+                    print("waiting for frames")
+
+                if frame is not None:
+                    img = base64.b64decode(frame)
+                    npimg = np.fromstring(img, dtype=np.uint8)
+                    source = cv2.imdecode(npimg, 1)
+
+                    # Update heat image panel
+                    img = editImageData(source)
+                    img = convertNumpyToGuiElement(img)
+                    heat_image_panel.configure(
+                        image=img,
+                    )
+                    heat_image_panel.image = img
 
                 update_string_pointers(data_string_pointers, ambient_sensor_data)
                 # Update timer
