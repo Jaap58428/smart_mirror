@@ -25,8 +25,8 @@ with open('rocket/mirror.conf', "r") as f:
 
 print("settings loaded: \n settings")
 
-settings["run_ambient_sensor_thread"] = True
-settings["admin_camera_feed"] = True
+settings["run_ambient_sensor_thread"] = False
+settings["admin_camera_feed"] = False
 
 if os.name == 'nt':
     from sensor import MotionSenseMock as MotionSense
