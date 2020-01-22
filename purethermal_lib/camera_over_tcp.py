@@ -97,7 +97,7 @@ def raw_to_8bit(data):
 
 def display_temperature(img, val_k, loc, color):
     val = ktoc(val_k)
-    cv2.putText(img, "{0:.1f} degF".format(val), loc, cv2.FONT_HERSHEY_SIMPLEX, 0.75, color, 2)
+    cv2.putText(img, "{0:.1f} degC".format(val), loc, cv2.FONT_HERSHEY_SIMPLEX, 0.75, color, 2)
     x, y = loc
     cv2.line(img, (x - 2, y), (x + 2, y), color, 1)
     cv2.line(img, (x, y - 2), (x, y + 2), color, 1)
@@ -167,8 +167,8 @@ def main():
                     jpg_as_text = base64.b64encode(buffer)
                     connection.send(jpg_as_text)
 
-                    cv2.imshow('Lepton Radiometry', img)
-                    cv2.waitKey(1)
+                    #cv2.imshow('Lepton Radiometry', img)
+                    #cv2.waitKey(1)
 
                 cv2.destroyAllWindows()
             finally:
