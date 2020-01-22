@@ -1,1 +1,0 @@
-/home/ghost/smart_mirror/rocket/mirror.conf     IN_MODIFY,IN_CREATE     /bin/bash /home/ghost/smart_mirror/reboot.sh
