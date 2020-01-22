@@ -16,18 +16,15 @@ from uvctypes import *
 import time
 import cv2
 import numpy as np
-from pathlib import Path  # python3 only
-from dotenv import load_dotenv
 import threading
 import zmq
 import base64
 
 # SETUP SETTINGS
-env_path = Path('/home/pi/rocket') / '.env'
-load_dotenv(dotenv_path=env_path)
-config_path = os.getenv("CONFIG_FILE")
-with open('/home/ghost/smart_mirror/rocket/' + config_path, "r") as f:
+with open('rocket/mirror.conf', "r") as f:
     settings = json.load(f)
+
+print("settings loaded: \n settings")
 
 settings["run_ambient_sensor_thread"] = True
 settings["admin_camera_feed"] = True
