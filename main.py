@@ -205,7 +205,7 @@ def show_gui(gui_elements):
     gui_elements[0].pack(side=tk.TOP, anchor=tk.W)
 
     # data & debug panel require pack_forget()
-    gui_elements[1].pack(side=tk.TOP, anchor=tk.E)
+    gui_elements[1].pack(side=tk.BOTTOM, anchor=tk.E)
     if settings["display_debug_panel"]:
         gui_elements[2].pack(side=tk.BOTTOM, anchor=tk.W)
 

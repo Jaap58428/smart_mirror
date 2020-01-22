@@ -38,9 +38,9 @@ impl Default for MirrorConfig {
             display_host_ip: true,
             display_sleep_timer: true,
             display_debug_panel: true,
-            sleep_timeout_sec: 10,
-            screen_max_frame_rate: 30.0,
-            ambient_temp_delay: 2,
+            sleep_timeout_sec: 30,
+            screen_max_frame_rate: 60.0,
+            ambient_temp_delay: 10,
         }
     }
 }
