@@ -275,7 +275,7 @@ def rotate_frame(img):
 
 
 def editImageData(frame):
-    frame = rotate_frame(frame)
+    # frame = rotate_frame(frame)
 
     # FILTER IMAGE
     filter_ratio = 0.4

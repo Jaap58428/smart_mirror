@@ -5,6 +5,7 @@ from uvctypes import *
 import time
 import cv2
 import numpy as np
+import imutils
 import zmq
 import base64
 
@@ -157,6 +158,7 @@ def main():
                     if data is None:
                         break
                     data = cv2.resize(data[:, :], (640, 480))
+                    data = imutils.rotate_bound(data, 270)
                     minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
                     img = raw_to_8bit(data)
                     display_temperature(img, minVal, minLoc, (255, 0, 0))
