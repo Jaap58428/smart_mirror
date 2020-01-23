@@ -180,8 +180,8 @@ def main():
                     connection.send(jpg_as_text)
 
                     # Keep commented out when not connected to display!
-                    cv2.imshow('Lepton Radiometry', img)
-                    cv2.waitKey(1)
+                    #cv2.imshow('Lepton Radiometry', img)
+                    #cv2.waitKey(1)
 
                 cv2.destroyAllWindows()
             finally:
