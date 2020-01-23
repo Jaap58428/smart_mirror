@@ -280,10 +280,10 @@ def editImageData(frame):
     # frame = cv2.resize(frame[:, :], (1200, 1600))
 
     # FILTER IMAGE
-    filter_ratio = 0.4
-    gradient_cutoff = int(255 / filter_ratio)
-    lower_cutoff = np.array([0, 0, 0])  # [B value, G value, R value]
-    upper_cutoff = np.array([gradient_cutoff, gradient_cutoff, gradient_cutoff])
+    #filter_ratio = 0.4
+    #gradient_cutoff = int(255 / filter_ratio)
+    lower_cutoff = np.array([100, 0, 0])  # [B value, G value, R value]
+    upper_cutoff = np.array([255, 100, 120])
     mask = cv2.inRange(frame, lower_cutoff, upper_cutoff)
 
     # Anything within cutoff range is set to black
@@ -410,7 +410,7 @@ if __name__ == '__main__':
                 try:
                     frame = footage_socket.recv_string(flags=zmq.NOBLOCK)
                 except zmq.Again as e:
-                    print("waiting for frames")
+                    print("waiting for frames", end=" ")
 
                 if frame is not None:
                     img = base64.b64decode(frame)
