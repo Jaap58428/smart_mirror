@@ -1,4 +1,7 @@
 #!/bin/bash
 
-sudo python3 /home/ghost/smart_mirror/purethermal_lib/camera_over_tcp.py &
+fullpath=$(realpath $0)
+dir_path=$(dirname $fullpath)
+
+sudo python3 $dir_path/purethermal_lib/camera_over_tcp.py &
 

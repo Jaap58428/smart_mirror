@@ -12,25 +12,21 @@ import colorsys
 import json
 from PIL import Image
 from PIL import ImageTk
-from uvctypes import *
 import time
 import cv2
 import numpy as np
-from pathlib import Path  # python3 only
-from dotenv import load_dotenv
 import threading
 import zmq
 import base64
 
 # SETUP SETTINGS
-env_path = Path('/home/pi/rocket') / '.env'
-load_dotenv(dotenv_path=env_path)
-config_path = os.getenv("CONFIG_FILE")
-with open('/home/ghost/smart_mirror/rocket/' + config_path, "r") as f:
+with open('rocket/mirror.conf', "r") as f:
     settings = json.load(f)
 
-settings["run_ambient_sensor_thread"] = True
-settings["admin_camera_feed"] = True
+print("settings loaded:\n{}".format(settings))
+
+settings["run_ambient_sensor_thread"] = False
+settings["admin_camera_feed"] = False
 
 if os.name == 'nt':
     from sensor import MotionSenseMock as MotionSense
@@ -209,7 +205,7 @@ def show_gui(gui_elements):
     gui_elements[0].pack(side=tk.TOP, anchor=tk.W)
 
     # data & debug panel require pack_forget()
-    gui_elements[1].pack(side=tk.TOP, anchor=tk.E)
+    gui_elements[1].pack(side=tk.BOTTOM, anchor=tk.E)
     if settings["display_debug_panel"]:
         gui_elements[2].pack(side=tk.BOTTOM, anchor=tk.W)
 
@@ -279,15 +275,18 @@ def rotate_frame(img):
 
 
 def editImageData(frame):
-    frame = rotate_frame(frame)
+    # frame = rotate_frame(frame)
     # Arguments are in the (x, y) form here
     # frame = cv2.resize(frame[:, :], (1200, 1600))
 
     # FILTER IMAGE
-    lower_blue = np.array([0, 0, 120])  # [R value, G value, B value]
-    upper_blue = np.array([100, 0, 255])
-    mask = cv2.inRange(frame, lower_blue, upper_blue)
+    #filter_ratio = 0.4
+    #gradient_cutoff = int(255 / filter_ratio)
+    lower_cutoff = np.array([100, 0, 0])  # [B value, G value, R value]
+    upper_cutoff = np.array([255, 100, 120])
+    mask = cv2.inRange(frame, lower_cutoff, upper_cutoff)
 
+    # Anything within cutoff range is set to black
     frame[mask != 0] = [0, 0, 0]
 
     # @NOTE: As of this moment (16-12-2019), we hit an assertion with the {min|max}.
@@ -345,7 +344,7 @@ def start_screen_grab_thread(cv2_stream):
             image = editImageData(source)
 
             if read_flag:
-                path = '/home/ghost/smart_mirror/static/screen_grab.jpeg'
+                path = 'static/screen_grab.jpeg'
                 cv2.imwrite(path, image)
                 read_flag = False
                 print("image written")
@@ -411,7 +410,7 @@ if __name__ == '__main__':
                 try:
                     frame = footage_socket.recv_string(flags=zmq.NOBLOCK)
                 except zmq.Again as e:
-                    print("waiting for frames")
+                    print("waiting for frames", end=" ")
 
                 if frame is not None:
                     img = base64.b64decode(frame)
