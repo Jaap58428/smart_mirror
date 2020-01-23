@@ -98,10 +98,10 @@ def raw_to_8bit(data):
 
 def display_temperature(img, val_k, loc, color):
     val = ktoc(val_k)
-    cv2.putText(img, "{0:.1f} degC".format(val), loc, cv2.FONT_HERSHEY_SIMPLEX, 0.75, color, 2)
+    cv2.putText(img, "{0:.1f} degC".format(val), loc, cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
     x, y = loc
-    cv2.line(img, (x - 2, y), (x + 2, y), color, 1)
-    cv2.line(img, (x, y - 2), (x, y + 2), color, 1)
+    cv2.line(img, (x - 5, y), (x + 5, y), color, 2)
+    cv2.line(img, (x, y - 5), (x, y + 5), color, 2)
 
 
 def main():
@@ -158,11 +158,19 @@ def main():
                     if data is None:
                         break
                     data = cv2.resize(data[:, :], (640, 480))
+
+                    # Rotate image
                     data = imutils.rotate_bound(data, 270)
+
+                    # Extract meta-data
                     minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
+
+                    # convert to BGR image
                     img = raw_to_8bit(data)
-                    display_temperature(img, minVal, minLoc, (255, 0, 0))
-                    display_temperature(img, maxVal, maxLoc, (0, 0, 255))
+                    img = cv2.applyColorMap(img, cv2.COLORMAP_PLASMA)
+
+                    display_temperature(img, minVal, minLoc, (255, 255, 255))
+                    display_temperature(img, maxVal, maxLoc, (255, 255, 255))
 
                     # Send img over TCP connection
                     encoded, buffer = cv2.imencode('.jpg', img)

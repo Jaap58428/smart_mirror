@@ -288,7 +288,6 @@ def editImageData(frame):
     frame[mask != 0] = [0, 0, 0]
 
     # https://docs.opencv.org/master/d3/d50/group__imgproc__colormap.html
-    frame = cv2.applyColorMap(frame, cv2.COLORMAP_PLASMA)
 
     return frame
 
