@@ -100,8 +100,8 @@ def display_temperature(img, val_k, loc, color):
     val = ktoc(val_k)
     cv2.putText(img, "{0:.1f} degC".format(val), loc, cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
     x, y = loc
-    cv2.line(img, (x - 5, y), (x + 5, y), color, 2)
-    cv2.line(img, (x, y - 5), (x, y + 5), color, 2)
+    cv2.line(img, (x - 5, y), (x + 5, y), color, 1)
+    cv2.line(img, (x, y - 5), (x, y + 5), color, 1)
 
 
 def main():
@@ -160,7 +160,6 @@ def main():
                     data = cv2.resize(data[:, :], (640, 480))
 
                     # Rotate image
-                    data = imutils.rotate_bound(data, 270)
 
                     # Extract meta-data
                     minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
@@ -168,8 +167,11 @@ def main():
                     # convert to BGR image
                     img = raw_to_8bit(data)
                     img = cv2.applyColorMap(img, cv2.COLORMAP_PLASMA)
+                    img = imutils.rotate_bound(img, 270)
+                    maxLoc = (maxLoc[1],img.shape[0] - maxLoc[0])
 
-                    display_temperature(img, minVal, minLoc, (255, 255, 255))
+                    # for now only display the MAX values
+                    #display_temperature(img, minVal, minLoc, (255, 255, 255))
                     display_temperature(img, maxVal, maxLoc, (255, 255, 255))
 
                     # Send img over TCP connection
@@ -177,8 +179,9 @@ def main():
                     jpg_as_text = base64.b64encode(buffer)
                     connection.send(jpg_as_text)
 
-                    #cv2.imshow('Lepton Radiometry', img)
-                    #cv2.waitKey(1)
+                    # Keep commented out when not connected to display!
+                    cv2.imshow('Lepton Radiometry', img)
+                    cv2.waitKey(1)
 
                 cv2.destroyAllWindows()
             finally:
