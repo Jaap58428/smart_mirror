@@ -276,6 +276,8 @@ def rotate_frame(img):
 
 def editImageData(frame):
     # frame = rotate_frame(frame)
+    # Arguments are in the (x, y) form here
+    # frame = cv2.resize(frame[:, :], (1200, 1600))
 
     # FILTER IMAGE
     filter_ratio = 0.4
@@ -287,7 +289,19 @@ def editImageData(frame):
     # Anything within cutoff range is set to black
     frame[mask != 0] = [0, 0, 0]
 
+    # @NOTE: As of this moment (16-12-2019), we hit an assertion with the {min|max}.
+    # This is a cv2 error.
+    # minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(frame)
+    # cv2.normalize(frame, frame, 0, 65535, cv2.NORM_MINMAX)
+    # np.right_shift(frame, 8, frame)
+
+    # frame = cv2.cvtColor(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), cv2.COLOR_GRAY2RGB)
+
     # https://docs.opencv.org/master/d3/d50/group__imgproc__colormap.html
+    # frame = cv2.applyColorMap(frame, cv2.COLORMAP_RAINBOW)
+
+    # display_temperature(img, minVal, minLoc, (255, 255, 255))
+    # display_temperature(img, maxVal, maxLoc, (255, 255, 255))
 
     return frame
 
@@ -297,17 +311,54 @@ def convertNumpyToGuiElement(frame):
     return ImageTk.PhotoImage(Image.fromarray(frame))
 
 
-def assert_save_delay(last_screen_grab_update):
-    delay = 5
-    current = time.time()
-    # returns True if its time for a new write
-    return (current - last_screen_grab_update) > delay
+def get_stream():
+    # capture from the LAST camera in the system
+    # presumably, if the system has a built-in webcam it will be the first
+    for i in reversed(range(10)):
+        cv2_cap = cv2.VideoCapture(i)
+        if cv2_cap.isOpened():
+            break
+
+    if not cv2_cap.isOpened():
+        print("Camera not found!")
+        exit(1)
+
+    return cv2_cap
 
 
-def write_screen_file(img):
-    path = 'static/screen_grab.jpeg'
-    cv2.imwrite(path, img)
-    print("image written")
+# ONLY USE THIS AS A THREAD
+def start_screen_grab_thread(cv2_stream):
+    def write_screen_file(cv2_stream):
+        delay = 1
+        last_screen_grab_update = 0
+        while True:
+            current = time.time()
+            if (current - last_screen_grab_update) < delay:
+                continue
+
+            frame = footage_socket.recv_string()
+            img = base64.b64decode(frame)
+            npimg = np.fromstring(img, dtype=np.uint8)
+            source = cv2.imdecode(npimg, 1)
+
+            image = editImageData(source)
+
+            if read_flag:
+                path = 'static/screen_grab.jpeg'
+                cv2.imwrite(path, image)
+                read_flag = False
+                print("image written")
+
+            last_screen_grab_update = current
+
+    screen_grab_thread = threading.Thread(
+        target=write_screen_file,
+        args=(cv2_stream,),
+        daemon=True  # kills thread once main dies
+    )
+    screen_grab_thread.start()
+
+    return screen_grab_thread
 
 
 if __name__ == '__main__':
@@ -322,6 +373,10 @@ if __name__ == '__main__':
         last_ambient_temp_req_time = 0
         if settings["run_ambient_sensor_thread"]:
             update_ambient_temp_data(ambient_temp_sensor)
+
+        # START SCREEN GRAB THREAD
+        if settings["admin_camera_feed"]:
+            start_screen_grab_thread(footage_socket)
 
         # GET ROOT WINDOW
         window = get_main_window()
@@ -344,35 +399,26 @@ if __name__ == '__main__':
 
         # At boot set start time
         start_time = time.time()
-        last_screen_grab_update = 0
 
         while True:
             # If timer hasn't passed into sleep: ACTIVE
             time_passed = time.time() - start_time
-
-            # GET IMAGE FROM STREAM
-            frame = None
-            try:
-                frame = footage_socket.recv_string(flags=zmq.NOBLOCK)
-            except zmq.Again as e:
-                print("waiting for frames")
-            if frame is not None:
-                # decode image
-                img = base64.b64decode(frame)
-                npimg = np.fromstring(img, dtype=np.uint8)
-                source = cv2.imdecode(npimg, 1)
-
-                # edit image for display
-                img = editImageData(source)
-
-            # START SCREEN GRAB THREAD
-            if settings["admin_camera_feed"] and assert_save_delay(last_screen_grab_update):
-                last_screen_grab_update = time.time()
-                write_screen_file(img)
-
             if time_passed < settings["sleep_timeout_sec"]:
+
+                # GET IMAGE FROM STREAM
+                frame = None
+                try:
+                    frame = footage_socket.recv_string(flags=zmq.NOBLOCK)
+                except zmq.Again as e:
+                    print("waiting for frames")
+
                 if frame is not None:
+                    img = base64.b64decode(frame)
+                    npimg = np.fromstring(img, dtype=np.uint8)
+                    source = cv2.imdecode(npimg, 1)
+
                     # Update heat image panel
+                    img = editImageData(source)
                     img = convertNumpyToGuiElement(img)
                     heat_image_panel.configure(
                         image=img,
