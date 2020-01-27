@@ -361,6 +361,18 @@ def start_screen_grab_thread(cv2_stream):
     return screen_grab_thread
 
 
+class Timer():
+    def __init__(self, deadline):
+        self.time = time.time()
+        self.deadline = self.time + deadline
+
+    def is_expired(self):
+        return time.time() >= self.deadline
+    
+    def reset(self):
+        self = Timer(self.deadline - self.time)
+
+
 if __name__ == '__main__':
     with Board() as _, MotionSense(7) as motion_sensor, TempSense(17) as ambient_temp_sensor:
         # Open thermal camera stream
@@ -398,21 +410,23 @@ if __name__ == '__main__':
         is_gui_shown = True
 
         # At boot set start time
-        start_time = time.time()
+        # start_time = time.time()
+        timer = Timer(settings["sleep_timeout_sec"])
 
         while True:
+            frame = None
+            try:
+                frame = footage_socket.recv_string(flags=zmq.NOBLOCK)
+            except zmq.Again as e:
+                print("waiting for frames", end=" ")
+            
             # If timer hasn't passed into sleep: ACTIVE
-            time_passed = time.time() - start_time
-            if time_passed < settings["sleep_timeout_sec"]:
+            #time_passed = time.time() - start_time
+            #if time_passed < settings["sleep_timeout_sec"]:
+            if !timer.is_expired()
 
                 # GET IMAGE FROM STREAM
-                frame = None
-                try:
-                    frame = footage_socket.recv_string(flags=zmq.NOBLOCK)
-                except zmq.Again as e:
-                    print("waiting for frames", end=" ")
-
-                if frame is not None:
+                                if frame is not None:
                     img = base64.b64decode(frame)
                     npimg = np.fromstring(img, dtype=np.uint8)
                     source = cv2.imdecode(npimg, 1)
@@ -441,7 +455,8 @@ if __name__ == '__main__':
                 # Once movement is detected, show GUI and reset timer
                 if movement(motion_sensor):
                     show_gui(panels)
-                    start_time = time.time()
+                    #start_time = time.time()
+                    timer.reset()
             window.update_idletasks()
             window.update()
 
