@@ -359,15 +359,19 @@ def start_screen_grab_thread(cv2_stream):
 
 class Timer():
     def __init__(self, deadline):
-        self.time = time.time()
-        self.deadline = self.time + deadline
+        self.init_time = time.time()
+        self.deadline = self.init_time + deadline
 
     def is_expired(self):
         return time.time() >= self.deadline
     
     def reset(self):
-        self = Timer(self.deadline - self.time)
-
+        deadline = self.deadline - self.init_time
+        self.init_time = time.time()
+        self.deadline = self.init_time + deadline
+    
+    def time_passed(self):
+        return round(time.time() - self.init_time, 1)
 
 if __name__ == '__main__':
     with Board() as _, MotionSense(7) as motion_sensor, TempSense(17) as ambient_temp_sensor:
@@ -414,14 +418,14 @@ if __name__ == '__main__':
             # If timer hasn't passed into sleep: ACTIVE
             #time_passed = time.time() - start_time
             #if time_passed < settings["sleep_timeout_sec"]:
-            if !timer.is_expired()
+            if not timer.is_expired():
 
                 # UPDATE AMBIENT DATA
                 if settings["use_ambient_sensor"]:
                     read_ambient_temp_sensor(ambient_temp_sensor)
 
                 # GET IMAGE FROM STREAM
-                                if frame is not None:
+                if frame is not None:
                     img = base64.b64decode(frame)
                     npimg = np.fromstring(img, dtype=np.uint8)
                     source = cv2.imdecode(npimg, 1)
@@ -437,12 +441,12 @@ if __name__ == '__main__':
                 update_string_pointers(data_string_pointers, ambient_sensor_data)
                 # Update timer
                 if settings["display_debug_panel"] and settings["display_sleep_timer"]:
-                    time_str = round(time_passed, 1)
+                    time_str = timer.time_passed()
                     timer_str = "Timer: {0} ({1})".format(str(time_str), settings["sleep_timeout_sec"])
                     debug_string_pointers["display_sleep_timer"].set(timer_str)
 
                 if movement(motion_sensor):
-                    start_time = time.time()
+                    timer.reset()
 
             # Else fall into PASSIVE, check for movement
             else:
