@@ -168,7 +168,8 @@ def main():
                     img = raw_to_8bit(data)
                     img = cv2.applyColorMap(img, cv2.COLORMAP_PLASMA)
                     img = imutils.rotate_bound(img, 270)
-                    maxLoc = (maxLoc[1],img.shape[0] - maxLoc[0])
+                    img = cv2.flip(img, 0)
+                    maxLoc = (maxLoc[1], maxLoc[0])
 
                     # for now only display the MAX values
                     #display_temperature(img, minVal, minLoc, (255, 255, 255))
