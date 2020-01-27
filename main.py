@@ -25,7 +25,7 @@ with open('/home/pi/mirror.conf', "r") as f:
 
 print("settings loaded:\n{}".format(settings))
 
-settings["use_ambient_sensor"] = True
+settings["use_ambient_sensor"] =False
 settings["admin_camera_feed"] = False
 
 if os.name == 'nt':
@@ -124,13 +124,13 @@ def generate_data_labels(parent, data_set):
             textvariable=string_pointers[attr],
             bg=Color.BACKGROUND.value,
             fg=Color.FONT_COLOR.value,
-            width=20,
+            width=40,
             anchor=tk.W,
             font=("default", 32)
         )
-        if not settings["use_ambient_sensor"]:
+        if settings["use_ambient_sensor"]:
             new_label.configure(
-                font=("default", 1)
+                font=("default", 32)
             )
         new_label.pack()
     return parent, string_pointers
@@ -222,7 +222,7 @@ def generate_debug_labels(parent):
             bg=Color.BACKGROUND.value,
             fg=Color.FONT_COLOR.value,
             anchor=tk.W,
-            width=40,
+            width=30,
             font=("default", 10)
         )
         timer_label.pack()
@@ -236,7 +236,7 @@ def generate_debug_labels(parent):
             bg=Color.BACKGROUND.value,
             fg=Color.FONT_COLOR.value,
             anchor=tk.W,
-            width=40,
+            width=30,
             font=("default", 10)
         )
         ip_label.pack()
