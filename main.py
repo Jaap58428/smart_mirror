@@ -20,12 +20,12 @@ import zmq
 import base64
 
 # SETUP SETTINGS
-with open('rocket/mirror.conf', "r") as f:
+with open('/home/pi/mirror.conf', "r") as f:
     settings = json.load(f)
 
 print("settings loaded:\n{}".format(settings))
 
-settings["run_ambient_sensor_thread"] = False
+settings["run_ambient_sensor_thread"] = True
 settings["admin_camera_feed"] = False
 
 if os.name == 'nt':

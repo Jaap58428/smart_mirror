@@ -83,7 +83,7 @@ fn reset() -> Result<Json<MirrorConfig>, io::Error> {
 
 #[get("/")]
 fn index() -> io::Result<NamedFile> {
-    NamedFile::open("/home/ghost/smart_mirror/static/index.html")
+    NamedFile::open("/home/jaap/smart_mirror/static/index.html")
 }
 
 #[catch(404)]
@@ -102,7 +102,7 @@ fn main() {
     rocket::ignite()
         .register(catchers![internal_error, not_found])
         //.mount("/", routes![index])
-        .mount("/", StaticFiles::from("/home/ghost/smart_mirror/static"))
+        .mount("/", StaticFiles::from("/home/jaap/smart_mirror/static"))
         .mount("/api", routes![config, submit, reset])
         .attach(cors::make_cors())
         .launch();
