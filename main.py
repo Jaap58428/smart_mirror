@@ -25,7 +25,7 @@ with open('/home/pi/mirror.conf', "r") as f:
 
 print("settings loaded:\n{}".format(settings))
 
-settings["run_ambient_sensor_thread"] = True
+settings["use_ambient_sensor"] = True
 settings["admin_camera_feed"] = False
 
 if os.name == 'nt':
@@ -46,7 +46,7 @@ LABEL_STRINGS = {
 ambient_sensor_data = {
     "temp": 0,
     "hum": 0,
-    "last_update": time.time()
+    "last_update": 0
 }
 
 
@@ -128,9 +128,9 @@ def generate_data_labels(parent, data_set):
             anchor=tk.W,
             font=("default", 32)
         )
-        if settings["run_ambient_sensor_thread"]:
+        if not settings["use_ambient_sensor"]:
             new_label.configure(
-                font=("default", 32)
+                font=("default", 1)
             )
         new_label.pack()
     return parent, string_pointers
@@ -151,34 +151,30 @@ def get_data_panel(parent, data_set):
 
 def read_ambient_temp_sensor(tmpsensor):
     global ambient_sensor_data
-    current = time.time()
+    current_time = time.time()
 
-    delay = settings["ambient_temp_delay"]
-    while (True):
-        last_update = ambient_sensor_data["last_update"]
+    if (current_time - ambient_sensor_data["last_update"]) < settings["ambient_temp_delay"]:
+        return
 
-        if (time.time() - last_update) < delay:
-            continue
+    (hum, temp) = tmpsensor.sense()
+    hum = round(hum, 2)
+    temp = round(temp, 2)
 
-        (hum, temp) = tmpsensor.sense()
-        hum = round(hum, 2)
-        temp = round(temp, 2)
+    ambient_sensor_data["temp"] = temp
 
-        ambient_sensor_data["temp"] = temp
+    if settings["use_humidity"]:
+        ambient_sensor_data["hum"] = hum
 
-        if settings["use_humidity"]:
-            ambient_sensor_data["hum"] = hum
-
-        ambient_sensor_data["last_update"] = time.time()
+    ambient_sensor_data["last_update"] = current_time
 
 
-def update_ambient_temp_data(tmpsensor):
-    update_temp_thread = threading.Thread(
-        target=read_ambient_temp_sensor,
-        args=(tmpsensor,),
-        daemon=True  # kills thread once main dies
-    )
-    update_temp_thread.start()
+# def update_ambient_temp_data(tmpsensor):
+#     update_temp_thread = threading.Thread(
+#         target=read_ambient_temp_sensor,
+#         args=(tmpsensor,),
+#         daemon=True  # kills thread once main dies
+#     )
+#     update_temp_thread.start()
 
 
 def update_string_pointers(string_pointers, data_set):
@@ -369,11 +365,6 @@ if __name__ == '__main__':
         footage_socket.bind('tcp://*:5555')
         footage_socket.setsockopt_string(zmq.SUBSCRIBE, np.unicode(''))
 
-        # SETUP AMBIENT TEMP SENSOR
-        last_ambient_temp_req_time = 0
-        if settings["run_ambient_sensor_thread"]:
-            update_ambient_temp_data(ambient_temp_sensor)
-
         # START SCREEN GRAB THREAD
         if settings["admin_camera_feed"]:
             start_screen_grab_thread(footage_socket)
@@ -404,6 +395,10 @@ if __name__ == '__main__':
             # If timer hasn't passed into sleep: ACTIVE
             time_passed = time.time() - start_time
             if time_passed < settings["sleep_timeout_sec"]:
+
+                # UPDATE AMBIENT DATA
+                if settings["use_ambient_sensor"]:
+                    read_ambient_temp_sensor(ambient_temp_sensor)
 
                 # GET IMAGE FROM STREAM
                 frame = None
