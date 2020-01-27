@@ -151,7 +151,7 @@ def main():
 
                 # Setup TCP connections
                 socket = Socket()
-                connection = socket.connect('tcp://192.168.137.163:5555')
+                connection = socket.connect('tcp://192.168.137.95:5555')
 
                 while True:
                     data = q.get(True, 500)
