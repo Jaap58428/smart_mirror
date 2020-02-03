@@ -1,0 +1,6 @@
+numpy
+zmq
+opencv
+imutils
+Pillow
+Adafruit_DHT
